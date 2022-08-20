@@ -15,6 +15,9 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="QListWidget" name="lwLogs"/>
+    </item>
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
@@ -200,7 +203,7 @@
         <item row="0" column="2">
          <widget class="QPushButton" name="pbFindProjet">
           <property name="text">
-           <string>PushButton</string>
+           <string>...</string>
           </property>
          </widget>
         </item>
@@ -212,7 +215,7 @@
          </widget>
         </item>
         <item row="2" column="2">
-         <widget class="QPushButton" name="pushButton_3">
+         <widget class="QPushButton" name="pbSetPartsInSch">
           <property name="text">
            <string>Set Part</string>
           </property>
@@ -242,9 +245,6 @@
       </widget>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QListWidget" name="lwLogs"/>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -262,6 +262,7 @@
     </property>
     <addaction name="actionOpen_Project"/>
     <addaction name="actionOpen_Logs"/>
+    <addaction name="separator"/>
     <addaction name="actionClose"/>
    </widget>
    <addaction name="menuFile"/>

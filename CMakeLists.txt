@@ -26,7 +26,7 @@ endif()
 
 #set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
-#set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,7 +35,7 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 file( GLOB_RECURSE BASE_SRC src/*cpp src/*h)
-file( GLOB_RECURSE BASE_RES res/*ui)
+file( GLOB_RECURSE BASE_RES res/*ui res/*qrc)
 
 qt5_wrap_ui(BASE_SRC res/mainwindow.ui)
 
@@ -44,6 +44,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${BASE_SRC}
         ${BASE_RES}
+        res/KicadHelper.qrc
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -61,6 +62,7 @@ else()
         add_executable(${PROJECT_NAME}
             ${BASE_SRC}
             ${BASE_RES}
+            res/KicadHelper.qrc
         )
     endif()
 endif()
@@ -78,6 +80,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(${PROJECT_NAME})
 endif()
+
+target_sources(${PROJECT_NAME} PRIVATE res/resource.rc)
 
 if(WIN32)
   set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})

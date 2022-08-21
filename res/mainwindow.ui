@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Kicad Helper</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="KicadHelper.qrc">
+    <normaloff>:/KicadHelper/kicad.png</normaloff>:/KicadHelper/kicad.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="1" column="0">
@@ -21,7 +25,7 @@
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tabRename">
        <attribute name="title">
@@ -239,7 +243,36 @@
          <widget class="QLineEdit" name="lePartsCSV"/>
         </item>
         <item row="3" column="0" colspan="3">
-         <widget class="QTableWidget" name="tableWidget"/>
+         <widget class="QTableWidget" name="twParts">
+          <property name="columnCount">
+           <number>5</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>FootPrint</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Value</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Digikey PN</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>LCSC PN</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>MPN PN</string>
+           </property>
+          </column>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -284,6 +317,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="KicadHelper.qrc"/>
+ </resources>
  <connections/>
 </ui>

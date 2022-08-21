@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/KicadHelper">
+        <file>kicad.png</file>
+    </qresource>
+</RCC>

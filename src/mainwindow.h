@@ -3,15 +3,20 @@
 
 #include <QMainWindow>
 
+#include "partinfo.h"
+
 #include "spdlog/spdlog.h"
+#include "spdlog/common.h"
 
 #include <memory>
+#include <filesystem>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 
 class QSettings;
 QT_END_NAMESPACE
+
 
 class MainWindow : public QMainWindow
 {
@@ -47,7 +52,22 @@ private:
 
     std::shared_ptr<spdlog::logger> logger{ nullptr };
     std::unique_ptr<QSettings> settings{ nullptr };
+    std::vector<std::pair<QString, QString>> replaceWordsList;
+
+    std::vector<PartInfo> partList;
 
     void SetProject(QString const& project);
+    void ImportRenameCSV(QString const& csvFile);
+    void ImportPartNumerCSV(QString const& csvFile);
+
+    void ReplaceInFile(QString const& filePath, std::vector<std::pair<QString, QString>> const& replaceList);
+    void CopyRecursive(const std::filesystem::path& src, const std::filesystem::path& target) ;
+    void MoveRecursive(const std::filesystem::path& src, const std::filesystem::path& target, bool createRoot = true);
+    void UpdateSchematic(QString const& schPath);
+    //void LogMessage(std::string const& message, spdlog::level::level_enum llvl = spdlog::level::level_enum::debug)
+    //{
+    //    LogMessage(QString::fromStdString(message), llvl);
+    //}
+    void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 };
 #endif // MAINWINDOW_H

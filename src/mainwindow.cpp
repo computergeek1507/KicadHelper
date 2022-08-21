@@ -217,6 +217,7 @@ void MainWindow::on_pbTextReplace_clicked()
 		return;
 	}
 	ReplaceInFile(ui->leSchematic->text(), replaceWordsList);
+	LogMessage(QString("Updating Text on %1 ").arg(ui->leSchematic->text()));
 }
 
 void MainWindow::on_pbFindPCB_clicked()
@@ -293,8 +294,8 @@ void MainWindow::SetProject(QString const& project)
 	for(auto const& file: kicadFiles) {
 		if (file.endsWith(".kicad_pcb"))
 		{
-			ui->lePCB->setText(file);
-			ui->leSchematic->setText(file);
+			ui->lePCB->setText(directory.absolutePath() + "/" + file);
+			ui->leSchematic->setText(directory.absolutePath() + "/" + file);
 			break;
 		}
 	}

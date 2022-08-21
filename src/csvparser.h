@@ -7,26 +7,58 @@
 
 namespace csvparser
 {
-	std::vector<std::string> split(const std::string& s, char seperator)
-	{
-	   std::vector<std::string> output;
+	//https://stackoverflow.com/questions/1120140/how-can-i-read-and-parse-csv-files-in-c
+	enum class CSVState {
+		UnquotedField,
+		QuotedField,
+		QuotedQuote
+	};
 
-		std::string::size_type prev_pos {0};
-		std::string::size_type pos {0};
-
-		while((pos = s.find(seperator, pos)) != std::string::npos)
-		{
-			std::string substring( s.substr(prev_pos, pos-prev_pos) );
-
-			output.push_back(substring);
-
-			prev_pos = ++pos;
+	std::vector<std::string> readCSVRow(const std::string& row) {
+		CSVState state = CSVState::UnquotedField;
+		std::vector<std::string> fields{ "" };
+		size_t i = 0; // index of the current field
+		for (char c : row) {
+			switch (state) {
+			case CSVState::UnquotedField:
+				switch (c) {
+				case ',': // end of field
+					fields.push_back(""); i++;
+					break;
+				case '"': state = CSVState::QuotedField;
+					break;
+				default:  fields[i].push_back(c);
+					break;
+				}
+				break;
+			case CSVState::QuotedField:
+				switch (c) {
+				case '"': state = CSVState::QuotedQuote;
+					break;
+				default:  fields[i].push_back(c);
+					break;
+				}
+				break;
+			case CSVState::QuotedQuote:
+				switch (c) {
+				case ',': // , after closing quote
+					fields.push_back(""); i++;
+					state = CSVState::UnquotedField;
+					break;
+				case '"': // "" -> "
+					fields[i].push_back('"');
+					state = CSVState::QuotedField;
+					break;
+				default:  // end of quote
+					state = CSVState::UnquotedField;
+					break;
+				}
+				break;
+			}
 		}
-
-		output.push_back(s.substr(prev_pos, pos-prev_pos)); // Last word
-
-		return output;
+		return fields;
 	}
+
 	std::vector< std::vector< std::string > > parsefile(std::string const& path)
 	{
 		std::vector< std::vector< std::string > > lines;
@@ -41,13 +73,16 @@ namespace csvparser
 		while( std::getline( infile, line ) )
 		{
 			auto idx = line.find( '#' );
+			if (infile.bad() || infile.fail()) {
+				break;
+			}
 			if(idx != std::string::npos )
 			{
 				line = line.substr (0, idx);
 			}
 
-			line.erase( std::remove_if( line.begin(), line.end(), isspace ), line.end() );
-			auto lineVector = split( line, ',' );
+			//line.erase( std::remove_if( line.begin(), line.end(), isspace ), line.end() );
+			auto lineVector = readCSVRow(line);
 			if(lineVector.size() != 0 )
 			{
 				lines.push_back(lineVector);

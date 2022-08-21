@@ -60,6 +60,7 @@ private:
     void ImportRenameCSV(QString const& csvFile);
     void ImportPartNumerCSV(QString const& csvFile);
 
+    QString CleanQuotes(QString item) const;
     void ReplaceInFile(QString const& filePath, std::vector<std::pair<QString, QString>> const& replaceList);
     void CopyRecursive(const std::filesystem::path& src, const std::filesystem::path& target) ;
     void MoveRecursive(const std::filesystem::path& src, const std::filesystem::path& target, bool createRoot = true);

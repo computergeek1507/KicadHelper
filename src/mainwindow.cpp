@@ -270,7 +270,8 @@ void MainWindow::on_pbSetPartsInSch_clicked()
 	QStringList const& kicadFiles = directory.entryList(QStringList() << "*.kicad_sch" , QDir::Files);
 	for (auto const& file : kicadFiles)
 	{
-		UpdateSchematic(file);
+		LogMessage(QString("Updating PN's in %1").arg(file));
+		UpdateSchematic(directory.absolutePath() + "/" + file);
 	}
 }
 
@@ -303,18 +304,25 @@ void MainWindow::SetProject(QString const& project)
 	//	if (csv.contains("partnumbers") || csv.contains("part_numbers"))
 	//	{
 	//		ui->lePartsCSV->setText(csv);
-	//		ImportPartNumerCSV(csv);
+	//		ImportPartNumerCSV(directory.absolutePath() + "/" + csv);
 	//	}
 	//	if (csv.contains("map") || csv.contains("rename"))
 	//	{
 	//		ui->leMapCSV->setText(csv);
-	//		ImportRenameCSV(csv);
+	//		ImportRenameCSV(directory.absolutePath() + "/" + csv);
 	//	}
 	//}
 }
 
 void MainWindow::ImportRenameCSV(QString const& csvFile)
 {
+	auto SetImportItem = [&](int row, int col, QString const& text)
+	{
+		ui->lwWords->setItem(row, col, new QTableWidgetItem());
+		ui->lwWords->item(row, col)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+		ui->lwWords->item(row, col)->setText(text);
+	};
+	ui->lwWords->clearContents();
 	ui->lwWords->clear();
 	replaceWordsList.clear();
 	ui->leMapCSV->setText(csvFile);
@@ -323,14 +331,21 @@ void MainWindow::ImportRenameCSV(QString const& csvFile)
 
 	auto lines{ csvparser::parsefile(csvFile.toStdString()) };
 
+	ui->lwWords->setRowCount(lines.size());
+
+	int rowIdx{ 0 };
 	for (auto const& row : lines)
 	{
 		if (row.size() > 1)
 		{
-			ui->lwWords->addItem(QString("'%1' --> '%2'").arg(row[0].c_str()).arg(row[1].c_str()));
+			SetImportItem(rowIdx, 0, CleanQuotes(row[0].c_str()));
+			SetImportItem(rowIdx, 1, CleanQuotes(row[1].c_str()));
 			replaceWordsList.emplace_back(row[0].c_str(), row[1].c_str());
+			++rowIdx;
 		}
 	}
+
+	ui->lwWords->resizeColumnsToContents();
 }
 
 void MainWindow::ImportPartNumerCSV(QString const& csvFile)
@@ -361,20 +376,35 @@ void MainWindow::ImportPartNumerCSV(QString const& csvFile)
 		if (line.size() > 3)
 		{
 			lcsc = line[3].c_str();
+			lcsc = CleanQuotes(lcsc);
 			SetItem(row, 3, lcsc);
 		}
 		if (line.size() > 4)
 		{
 			mpn = line[4].c_str();
+			mpn = CleanQuotes(mpn);
 			SetItem(row, 4, mpn);
 		}
-		SetItem(row, 0, line[0].c_str());
-		SetItem(row, 1, line[1].c_str());
-		SetItem(row, 2, line[2].c_str());
-		partList.emplace_back(line[0].c_str(), line[1].c_str(), line[2].c_str(), lcsc, mpn);
+		QString value = line[0].c_str();
+		value = CleanQuotes(value);
+
+		if (value == "Value")
+		{
+			continue;
+		}
+
+		QString footp = line[1].c_str();
+		footp = CleanQuotes(footp);
+		QString digi = line[2].c_str();
+		digi = CleanQuotes(digi);
+		SetItem(row, 0, value);
+		SetItem(row, 1, footp);
+		SetItem(row, 2, digi);
+		partList.emplace_back(value, footp, digi, lcsc, mpn);
 
 		++row;		
 	}
+	ui->twParts->resizeColumnsToContents();
 }
 
 void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QString, QString>> const& replaceList)
@@ -392,7 +422,7 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QS
 
 		for (auto const& [Item1, Item2] : replaceList)
 		{
-			content.replace(QRegularExpression(Item1), Item2);
+			content = content.replace(QRegularExpression(Item1), Item2);
 		}
 
 		QFile outFile(filePath);
@@ -455,15 +485,22 @@ void MainWindow::UpdateSchematic(QString const& schPath)
 {
 	//Regex to look through schematic property, if we hit the pin section without finding a LCSC property, add it
 	//keep track of property ids and Reference property location to use with new LCSC property
+	// R"(\\(property\\s\\"(.*)\\"\s\\"(.*)\\"\s\\(id\\s(\\d +)\\)\\s\\(at\\s(-?\\d+.\\d+\\s-?\\d+.\\d+)\s\\d+\\)"
+	//\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\)
 	QRegularExpression propRx(
-		R"(\\(property\\s\\"(.*)\\"\s\\"(.*)\\"\s\\(id\\s(\\d +)\\)\\s\\(at\\s(-?\\d+.\\d+\\s-?\\d+.\\d+)\s\\d+\\")"
+		R"(\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\))"
 	);
-	QRegularExpression pinRx (R"(\\(pin\\s\\"(.*)\\"\\s\\()");
+	QRegularExpression pinRx(R"(\(pin\s\"(.*)\"\s\()");
 
-	int lastID = 0;
-	QString lastLoc = "";
-	QString lastLcsc = "";
-	QString newLcsc = "";
+	int lastID{ -1 };
+	QString lastLoc;
+	QString lastDigikey;
+	QString newDigikey;
+	QString lastLcsc;
+	QString newLcsc;
+	QString lastMPN;
+	QString newMPN;
+	QString lastRef;
 
 	std::vector<QString> lines;
 	std::vector<QString> newlines;
@@ -481,33 +518,73 @@ void MainWindow::UpdateSchematic(QString const& schPath)
 	}
 	inFile.close();
 
-	QFile::rename(schPath, schPath + "_old");
-
-	for (auto const& line : lines) {
+	for (auto const& line : lines)
+	{
 		QString outLine = line;
 		QRegularExpressionMatch m = propRx.match(line);
 
-		if (m.hasMatch()) {
+		if (m.hasMatch() && line.startsWith("    (property"))
+		{
 			auto key = m.captured(1);
 			auto	value = m.captured(2);
-			int lastID = m.captured(3).toInt();
+			auto slastID = m.captured(3);
+			lastID = m.captured(3).toInt();
+
+			if (key == "Digi-Key_PN")
+			{
+				lastDigikey = value;
+				if (lastDigikey != newDigikey && !newDigikey.isEmpty())
+				{
+					LogMessage(QString("Updating %1 Digikey to %2").arg(lastRef).arg(newDigikey));
+					outLine.replace("\"" + lastDigikey + "\"", "\"" + newDigikey + "\"");
+					lastDigikey = newDigikey;
+				}
+			}
 
 			//found a LCSC property, so update it if needed
 			if (key == "LCSC")
 			{
 				lastLcsc = value;
-				if (lastLcsc == newLcsc)
+				if (lastLcsc != newLcsc && !newLcsc.isEmpty())
 				{
-					outLine.replace(lastLcsc, newLcsc);
+					LogMessage(QString("Updating %1 LCSC to %2").arg(lastRef).arg(newLcsc));
+					outLine.replace("\"" + lastLcsc + "\"", "\"" + newLcsc + "\"");
+					lastLcsc = newLcsc;
 				}
 			}
+			if (key == "MPN")
+			{
+				lastMPN = value;
+				if (lastMPN != newMPN && !newMPN.isEmpty())
+				{
+					LogMessage(QString("Updating %1 MPN to %2").arg(lastRef).arg(newMPN));
+					outLine.replace("\"" + lastMPN + "\"", "\"" + newMPN + "\"");
+					lastMPN = newMPN;
+				}
+			}
+
 			if (key == "Reference")
 			{
 				lastLoc = m.captured(4);
+				lastRef = value;
+				//for (auto const& part : partList) {
+				//	if (value == part.value)
+				//	{
+				//		newDigikey = part.digikey;
+				//		newLcsc = part.lcsc;
+				//		newMPN = part.mpn;
+				//		break;
+				//	}
+				//}
+			}
+			if (key == "Value")
+			{
 				for (auto const& part : partList) {
-					if (value != part.value)
+					if (value == part.value)
 					{
+						newDigikey = part.digikey;
 						newLcsc = part.lcsc;
+						newMPN = part.mpn;
 						break;
 					}
 				}
@@ -515,25 +592,70 @@ void MainWindow::UpdateSchematic(QString const& schPath)
 		}
 
 //if we hit the pin section without finding a LCSC property, add it
-		QRegularExpressionMatch pm = propRx.match(line);
+		QRegularExpressionMatch pm = pinRx.match(line);
 
-		if (pm.hasMatch()) {
+		bool addDigi = lastDigikey.isEmpty() && !newDigikey.isEmpty();
+		bool addLcsc = lastLcsc.isEmpty() && !newLcsc.isEmpty();
+		bool addMPN = lastMPN.isEmpty() && !newMPN.isEmpty();
 
-			if (lastLcsc == "" && newLcsc != "" && lastLoc != "" && lastID != 0)
+		if (pm.hasMatch()) 
+		{
+			if ((addDigi || addLcsc || addMPN) && !lastLoc.isEmpty() && lastID != -1)
 			{
-				QString newTxt = QString("    (property \"LCSC\" \"%1\" (id %2) (at %3 0)").arg(newLcsc).arg(lastID + 1).arg(lastLoc);
-				newlines.push_back(newTxt);
-				newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
-				newlines.push_back("    )");
-				lastID = 0;
-				lastLoc = "";
-				lastLcsc = "";
-				newLcsc = "";
-				newlines.push_back(outLine);
+				int newid = lastID + 1;
+				if (addDigi)
+				{
+					LogMessage(QString("Adding %1 DigiKey %2").arg(lastRef).arg(newDigikey));
+					QString newTxt = QString("    (property \"Digi-Key_PN\" \"%1\" (id %2) (at %3 0)").arg(newDigikey).arg(newid).arg(lastLoc);
+					newlines.push_back(newTxt);
+					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
+					newlines.push_back("    )");
+					newid++;
+				}
+				if (addLcsc)
+				{
+					LogMessage(QString("Adding %1 LCSC %2").arg(lastRef).arg(newLcsc));
+					QString newTxt = QString("    (property \"LCSC\" \"%1\" (id %2) (at %3 0)").arg(newLcsc).arg(newid).arg(lastLoc);
+					newlines.push_back(newTxt);
+					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
+					newlines.push_back("    )");
+					newid++;
+				}
+				if (addMPN)
+				{
+					LogMessage(QString("Adding %1 MPN %2").arg(lastRef).arg(newMPN));
+					QString newTxt = QString("    (property \"MPN\" \"%1\" (id %2) (at %3 0)").arg(newMPN).arg(newid).arg(lastLoc);
+					newlines.push_back(newTxt);
+					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
+					newlines.push_back("    )");
+					newid++;
+				}
 			}
-		}			
+			lastDigikey = "";
+			newDigikey = "";
+			lastLcsc = "";
+			newLcsc = "";
+			lastMPN = "";
+			newMPN = "";
+			lastID = -1;
+			lastLoc = "";
+			lastRef = "";
+		}
+		newlines.push_back(outLine);
 	}
 
+	try 
+	{
+		if (QFile::exists(schPath + "_old"))
+		{
+			QFile::remove(schPath + "_old");
+		}
+
+		QFile::rename(schPath, schPath + "_old");
+	}
+	catch (std::exception ex)
+	{
+	}
 
 	QFile outFile(schPath);
 	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -545,8 +667,21 @@ void MainWindow::UpdateSchematic(QString const& schPath)
 		out << line << "\n";
 	}	
 	outFile.close();
+}
 
-	LogMessage(QString("Added LCSC's to %1(maybe?)").arg(schPath));
+QString MainWindow::CleanQuotes(QString item) const
+{
+	//item = item.trimmed();
+	if (item.startsWith("\""))
+	{
+		item.remove(0, 1);
+	}
+	if (item.endsWith("\""))
+	{
+		int pos = item.lastIndexOf("\"");
+		item = item.left(pos);
+	}
+	return item;
 }
 
 void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum llvl)

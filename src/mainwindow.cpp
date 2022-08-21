@@ -108,12 +108,12 @@ void MainWindow::on_pbRename_clicked()
 	QFileInfo project(ui->leProject->text());
 	if (!project.exists())
 	{
-		QMessageBox::warning(this, "Error", "File Doesn't Exists");
+		LogMessage("File Doesn't Exist", spdlog::level::level_enum::warn);
 		return;
 	}
 	if (ui->leOldName->text() == ui->leNewName->text())
 	{
-		QMessageBox::warning(this, "Error", "New and Old Names Are the same");
+		LogMessage("New and Old Names Are the same", spdlog::level::level_enum::warn);
 		return;
 	}
 
@@ -210,10 +210,12 @@ void MainWindow::on_pbTextReplace_clicked()
 {
 	if(replaceWordsList.empty())
 	{
+		LogMessage("Replace List is empty", spdlog::level::level_enum::warn);
 		return;
 	}
 	if (!QFile::exists(ui->leSchematic->text()))
 	{
+		LogMessage("File Doesn't Exist", spdlog::level::level_enum::warn);
 		return;
 	}
 	ReplaceInFile(ui->leSchematic->text(), replaceWordsList);
@@ -233,6 +235,7 @@ void MainWindow::on_pbCheckFP_clicked()
 {
 	if (!QFile::exists(ui->lePCB->text()))
 	{
+		LogMessage("File Doesn't Exist", spdlog::level::level_enum::warn);
 		return;
 	}
 	//todo
@@ -260,11 +263,13 @@ void MainWindow::on_pbSetPartsInSch_clicked()
 {
 	if (partList.empty())
 	{
+		LogMessage("Part List is empty", spdlog::level::level_enum::warn);
 		return;
 	}
 	QDir directory(ui->leProjectFolder->text());
 	if (!directory.exists())
 	{
+		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
 		return;
 	}
 

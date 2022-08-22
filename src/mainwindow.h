@@ -17,6 +17,8 @@ namespace Ui { class MainWindow; }
 class QSettings;
 QT_END_NAMESPACE
 
+class LibraryFinder;
+class SchematicAdder;
 
 class MainWindow : public QMainWindow
 {
@@ -47,14 +49,20 @@ public Q_SLOTS:
     void on_pbImportParts_clicked();
     void on_pbSetPartsInSch_clicked();
 
+    void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
+
+    void on_AddLibrary( QString const& name, QString const& type, QString const& path);
+
 private:
     Ui::MainWindow *ui;
 
     std::shared_ptr<spdlog::logger> logger{ nullptr };
     std::unique_ptr<QSettings> settings{ nullptr };
-    std::vector<std::pair<QString, QString>> replaceWordsList;
+    std::unique_ptr<LibraryFinder> library_finder{ nullptr };
+    std::unique_ptr<SchematicAdder> schematic_adder{ nullptr };
 
-    std::vector<PartInfo> partList;
+    std::vector<std::pair<QString, QString>> replaceWordsList;
+    
 
     void SetProject(QString const& project);
     void ImportRenameCSV(QString const& csvFile);
@@ -69,6 +77,6 @@ private:
     //{
     //    LogMessage(QString::fromStdString(message), llvl);
     //}
-    void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
+
 };
 #endif // MAINWINDOW_H

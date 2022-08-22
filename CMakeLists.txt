@@ -67,6 +67,10 @@ else()
     endif()
 endif()
 
+configure_file(res/config.h.in)
+include_directories(${PROJECT_BINARY_BIN}) // this allows the 'config.h' file to be used throughout the program
+
+
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets spdlog::spdlog)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

@@ -3,13 +3,15 @@
 
 #include "csvparser.h"
 
+#include "library_finder.h"
+#include "schematic_adder.h"
+
 #include <QMessageBox>
 #include <QDesktopServices>
 #include <QSettings>
 #include <QFileDialog>
 #include <QTextStream>
 #include <QThread>
-#include <QRegularExpression>
 
 #include "spdlog/spdlog.h"
 
@@ -53,6 +55,13 @@ MainWindow::MainWindow(QWidget *parent)
 	logger->info(std::string("Built with Qt ") + std::string(QT_VERSION_STR));
 
 	settings = std::make_unique< QSettings>(dir + "settings.ini", QSettings::IniFormat);
+
+	library_finder = std::make_unique<LibraryFinder>();
+	connect( library_finder.get(), &LibraryFinder::SendMessage, this, &MainWindow::LogMessage );
+	connect( library_finder.get(), &LibraryFinder::AddLibrary, this, &MainWindow::on_AddLibrary );
+
+	schematic_adder = std::make_unique<SchematicAdder>();
+	connect( schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
 
 	auto lastProject{ settings->value("last_project").toString() };
 	auto lastRename{ settings->value("last_rename").toString() };
@@ -194,7 +203,7 @@ void MainWindow::on_pbRename_clicked()
 
 void MainWindow::on_pbFindSchematic_clicked()
 {
-	QString const schematic = QFileDialog::getOpenFileName(this, "Select Kicad File", settings->value("last_project").toString(), tr("Kicad Files (*.kicad_pcb;*.kicad_sch;*.sch);;All Files (*.*)"));
+	QString const schematic = QFileDialog::getOpenFileName(this, "Select Kicad File", settings->value("last_project").toString(), tr("Kicad Files (*.kicad_pcb *.kicad_sch *.sch);;All Files (*.*)"));
 	if (!schematic.isEmpty())
 	{
 		ui->leSchematic->setText(schematic);
@@ -265,24 +274,7 @@ void MainWindow::on_pbImportParts_clicked()
 
 void MainWindow::on_pbSetPartsInSch_clicked() 
 {
-	if (partList.empty())
-	{
-		LogMessage("Part List is empty", spdlog::level::level_enum::warn);
-		return;
-	}
-	QDir directory(ui->leProjectFolder->text());
-	if (!directory.exists())
-	{
-		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
-		return;
-	}
-
-	QStringList const& kicadFiles = directory.entryList(QStringList() << "*.kicad_sch" , QDir::Files);
-	for (auto const& file : kicadFiles)
-	{
-		LogMessage(QString("Updating PN's in %1").arg(file));
-		UpdateSchematic(directory.absolutePath() + "/" + file);
-	}
+	schematic_adder->AddPartNumbersToSchematics(ui->leProjectFolder->text());
 }
 
 void MainWindow::SetProject(QString const& project)
@@ -368,6 +360,9 @@ void MainWindow::ImportPartNumerCSV(QString const& csvFile)
 	};
 	ui->twParts->clearContents();
 	ui->lePartsCSV->setText(csvFile);
+
+	schematic_adder->ClearPartList();
+
 	settings->setValue("last_partnumbers", csvFile);
 	settings->sync();
 
@@ -375,14 +370,20 @@ void MainWindow::ImportPartNumerCSV(QString const& csvFile)
 
 	ui->twParts->setRowCount(lines.size());
 	int row{ 0 };
+
+	int valuCol{ 0 };
+	int fpCol{ 1 };
+	int lcscCol{ 3 };
+	bool lcscBOM{ false };
 	for (auto const& line : lines)
-	{				
+	{
 		if (line.size() < 3)
 		{
 			continue;
 		}
 		QString lcsc;
 		QString mpn;
+		QString digi;
 		if (line.size() > 3)
 		{
 			lcsc = line[3].c_str();
@@ -395,7 +396,17 @@ void MainWindow::ImportPartNumerCSV(QString const& csvFile)
 			mpn = CleanQuotes(mpn);
 			SetItem(row, 4, mpn);
 		}
-		QString value = line[0].c_str();
+
+		if(line[2] == "LCSC Part")//Kicad Tools File over Kicad BOM export
+		{
+			valuCol = 1;
+			fpCol = 0;
+			lcscCol = 3;
+			lcscBOM = true;
+			continue;
+		}
+
+		QString value = line[valuCol].c_str();
 		value = CleanQuotes(value);
 
 		if (value == "Value")
@@ -403,14 +414,26 @@ void MainWindow::ImportPartNumerCSV(QString const& csvFile)
 			continue;
 		}
 
-		QString footp = line[1].c_str();
+		if(!lcscBOM)
+		{
+			digi = line[2].c_str();
+			digi = CleanQuotes(digi);
+			SetItem(row, 2, digi);
+		}
+		else
+		{
+			lcsc = line[2].c_str();
+			lcsc = CleanQuotes(lcsc);
+			SetItem(row, 3, lcsc);
+		}
+
+		QString footp = line[fpCol].c_str();
 		footp = CleanQuotes(footp);
-		QString digi = line[2].c_str();
-		digi = CleanQuotes(digi);
+		
 		SetItem(row, 0, value);
 		SetItem(row, 1, footp);
-		SetItem(row, 2, digi);
-		partList.emplace_back(value, footp, digi, lcsc, mpn);
+
+		schematic_adder->AddPart(std::move(value),std::move( footp), std::move( digi), std::move(lcsc), std::move(mpn));
 
 		++row;
 	}
@@ -453,6 +476,7 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QS
 
 	}
 }
+
 // Recursively copies all files and folders from src to target and overwrites existing files in target.
 void MainWindow::CopyRecursive(const std::filesystem::path& src, const std::filesystem::path& target)
 {
@@ -476,15 +500,17 @@ void MainWindow::MoveRecursive(const std::filesystem::path& src, const std::file
 		fs::create_directory(target);
 	}
 
-	for (fs::path p : fs::directory_iterator(src)) {
+	for (fs::path p : fs::directory_iterator(src))
+	{
 		fs::path destFile = target / p.filename();
 
 		if (fs::is_directory(p)) {
 			fs::create_directory(destFile);
 			MoveRecursive(p, destFile, false);
 		}
-		else {
-			//std::cout << "updated " << p.string().c_str() << std::endl;
+		else 
+		
+		{
 			fs::rename(p, destFile);
 
 		}
@@ -493,187 +519,12 @@ void MainWindow::MoveRecursive(const std::filesystem::path& src, const std::file
 
 void MainWindow::UpdateSchematic(QString const& schPath)
 {
-	//Regex to look through schematic property, if we hit the pin section without finding a LCSC property, add it
-	//keep track of property ids and Reference property location to use with new LCSC property
-	// R"(\\(property\\s\\"(.*)\\"\s\\"(.*)\\"\s\\(id\\s(\\d +)\\)\\s\\(at\\s(-?\\d+.\\d+\\s-?\\d+.\\d+)\s\\d+\\)"
-	//\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\)
-	QRegularExpression propRx(
-		R"(\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\))"
-	);
-	QRegularExpression pinRx(R"(\(pin\s\"(.*)\"\s\()");
+	
+}
 
-	int lastID{ -1 };
-	QString lastLoc;
-	QString lastDigikey;
-	QString newDigikey;
-	QString lastLcsc;
-	QString newLcsc;
-	QString lastMPN;
-	QString newMPN;
-	QString lastRef;
+void MainWindow::on_AddLibrary( QString const& name, QString const& type, QString const& path)
+{
 
-	std::vector<QString> lines;
-	std::vector<QString> newlines;
-
-	QFile inFile(schPath);
-
-	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
-	{
-		return;
-	}
-	QTextStream in(&inFile);
-	while (!in.atEnd())
-	{
-		lines.emplace_back(in.readLine());
-	}
-	inFile.close();
-
-	for (auto const& line : lines)
-	{
-		QString outLine = line;
-		QRegularExpressionMatch m = propRx.match(line);
-
-		if (m.hasMatch() && line.startsWith("    (property"))
-		{
-			auto key = m.captured(1);
-			auto	value = m.captured(2);
-			auto slastID = m.captured(3);
-			lastID = m.captured(3).toInt();
-
-			if (key == "Digi-Key_PN")
-			{
-				lastDigikey = value;
-				if (lastDigikey != newDigikey && !newDigikey.isEmpty())
-				{
-					LogMessage(QString("Updating %1 Digikey to %2").arg(lastRef).arg(newDigikey));
-					outLine.replace("\"" + lastDigikey + "\"", "\"" + newDigikey + "\"");
-					lastDigikey = newDigikey;
-				}
-			}
-			if (key == "LCSC")
-			{
-				lastLcsc = value;
-				if (lastLcsc != newLcsc && !newLcsc.isEmpty())
-				{
-					LogMessage(QString("Updating %1 LCSC to %2").arg(lastRef).arg(newLcsc));
-					outLine.replace("\"" + lastLcsc + "\"", "\"" + newLcsc + "\"");
-					lastLcsc = newLcsc;
-				}
-			}
-			if (key == "MPN")
-			{
-				lastMPN = value;
-				if (lastMPN != newMPN && !newMPN.isEmpty())
-				{
-					LogMessage(QString("Updating %1 MPN to %2").arg(lastRef).arg(newMPN));
-					outLine.replace("\"" + lastMPN + "\"", "\"" + newMPN + "\"");
-					lastMPN = newMPN;
-				}
-			}
-
-			if (key == "Reference")
-			{
-				lastLoc = m.captured(4);
-				lastRef = value;
-				//for (auto const& part : partList) {
-				//	if (value == part.value)
-				//	{
-				//		newDigikey = part.digikey;
-				//		newLcsc = part.lcsc;
-				//		newMPN = part.mpn;
-				//		break;
-				//	}
-				//}
-			}
-			if (key == "Value")
-			{
-				for (auto const& part : partList) {
-					if (value == part.value)
-					{
-						newDigikey = part.digikey;
-						newLcsc = part.lcsc;
-						newMPN = part.mpn;
-						break;
-					}
-				}
-			}
-		}
-
-		QRegularExpressionMatch pm = pinRx.match(line);
-
-		bool addDigi = lastDigikey.isEmpty() && !newDigikey.isEmpty();
-		bool addLcsc = lastLcsc.isEmpty() && !newLcsc.isEmpty();
-		bool addMPN = lastMPN.isEmpty() && !newMPN.isEmpty();
-
-		if (pm.hasMatch()) 
-		{
-			if ((addDigi || addLcsc || addMPN) && !lastLoc.isEmpty() && lastID != -1)
-			{
-				int newid = lastID + 1;
-				if (addDigi)
-				{
-					LogMessage(QString("Adding %1 DigiKey %2").arg(lastRef).arg(newDigikey));
-					QString newTxt = QString("    (property \"Digi-Key_PN\" \"%1\" (id %2) (at %3 0)").arg(newDigikey).arg(newid).arg(lastLoc);
-					newlines.push_back(newTxt);
-					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
-					newlines.push_back("    )");
-					newid++;
-				}
-				if (addLcsc)
-				{
-					LogMessage(QString("Adding %1 LCSC %2").arg(lastRef).arg(newLcsc));
-					QString newTxt = QString("    (property \"LCSC\" \"%1\" (id %2) (at %3 0)").arg(newLcsc).arg(newid).arg(lastLoc);
-					newlines.push_back(newTxt);
-					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
-					newlines.push_back("    )");
-					newid++;
-				}
-				if (addMPN)
-				{
-					LogMessage(QString("Adding %1 MPN %2").arg(lastRef).arg(newMPN));
-					QString newTxt = QString("    (property \"MPN\" \"%1\" (id %2) (at %3 0)").arg(newMPN).arg(newid).arg(lastLoc);
-					newlines.push_back(newTxt);
-					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
-					newlines.push_back("    )");
-					newid++;
-				}
-			}
-			lastDigikey = "";
-			newDigikey = "";
-			lastLcsc = "";
-			newLcsc = "";
-			lastMPN = "";
-			newMPN = "";
-			lastID = -1;
-			lastLoc = "";
-			lastRef = "";
-		}
-		newlines.push_back(outLine);
-	}
-
-	try 
-	{
-		if (QFile::exists(schPath + "_old"))
-		{
-			QFile::remove(schPath + "_old");
-		}
-
-		QFile::rename(schPath, schPath + "_old");
-	}
-	catch (std::exception ex)
-	{
-	}
-
-	QFile outFile(schPath);
-	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
-	{
-		return;
-	}
-	QTextStream out(&outFile);
-	for (auto const& line : newlines) {
-		out << line << "\n";
-	}	
-	outFile.close();
 }
 
 QString MainWindow::CleanQuotes(QString item) const

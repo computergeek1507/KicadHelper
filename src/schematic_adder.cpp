@@ -66,7 +66,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Cannot Open %1").arg(schPath), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn);
 		return;
 	}
 	QTextStream in(&inFile);
@@ -207,13 +207,13 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 	}
 	catch (std::exception ex)
 	{
-		emit SendMessage(QString("Cannot Create %1_old").arg(schPath), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Create '%1_old'").arg(schPath), spdlog::level::level_enum::warn);
 	}
 
 	QFile outFile(schPath);
 	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Cannot Open %1").arg(schPath), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn);
 		return;
 	}
 	QTextStream out(&outFile);

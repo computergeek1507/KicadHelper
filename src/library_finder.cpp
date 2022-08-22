@@ -7,7 +7,6 @@
 #include <QTextStream>
 #include <QFileInfo>
 #include <QCoreApplication>
-#include <QRegularExpression>
 
 LibraryFinder::LibraryFinder()
 {
@@ -35,6 +34,10 @@ void LibraryFinder::getStockLibraries()
     {
         ParseLibraries(getGlobalFootprintTablePath(), "System");
     }
+    else
+    {
+        emit SendMessage(QString("Could not Open '%1'").arg(getGlobalFootprintTablePath()), spdlog::level::level_enum::warn);
+    }
 }
 
 void LibraryFinder::ParseLibraries(QString const& path, QString const& level)
@@ -43,7 +46,7 @@ void LibraryFinder::ParseLibraries(QString const& path, QString const& level)
 
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Cannot Open %1").arg(path), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(path), spdlog::level::level_enum::warn);
 		return;
 	}
 	QTextStream in(&inFile);
@@ -95,7 +98,7 @@ void LibraryFinder::CheckSchematic(QString const& schPath) const
 
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Cannot Open %1").arg(schPath), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn);
 		return;
 	}
     bool errorFound{false};
@@ -285,7 +288,7 @@ QString LibraryFinder::getGlobalFootprintsPath() const
     return root.absoluteFilePath();
 #endif 
 #else
-    return R"( "/usr/share/kicad/footprints/)" ;
+    return R"(/usr/share/kicad/footprints/)" ;
 #endif
 }
 
@@ -301,7 +304,7 @@ QString LibraryFinder::getGlobalFootprintTablePath() const
     return root.absoluteFilePath();
 #endif 
 #else
-    return R"( "/usr/share/kicad/template/fp-lib-table)" ;
+    return R"(/usr/share/kicad/template/fp-lib-table)" ;
 #endif
     //C:\Program Files\KiCad\6.0\share\kicad\template\fp-lib-table
 }

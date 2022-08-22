@@ -58,6 +58,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 	QString lastMPN;
 	QString newMPN;
 	QString lastRef;
+	QString lastValue;
 
 	std::vector<QString> lines;
 	std::vector<QString> newlines;
@@ -132,13 +133,44 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 			}
 			if (key == "Value")
 			{
-				for (auto const& part : partList) {
-					if (value == part.value)
+				lastValue = value;
+				//for (auto const& part : partList) {
+				//	if (value == part.value)
+				//	{
+				//		newDigikey = part.digikey;
+				//		newLcsc = part.lcsc;
+				//		newMPN = part.mpn;
+				//		break;
+				//	}
+				//}
+			}
+			if (key == "Footprint")
+			{
+				bool found{false};
+				for (auto const& part : partList)
+				{
+					if (lastValue == part.value && value == part.footPrint)
 					{
 						newDigikey = part.digikey;
 						newLcsc = part.lcsc;
 						newMPN = part.mpn;
+						found = true;
+						emit SendMessage(QString("Part Found based on FootPrint '%1':'%2'").arg(part.value).arg(part.footPrint), spdlog::level::level_enum::debug);
 						break;
+					}
+				}
+				if(!found)
+				{
+					for (auto const& part : partList)
+					{
+						if (lastValue == part.value)
+						{
+							newDigikey = part.digikey;
+							newLcsc = part.lcsc;
+							newMPN = part.mpn;
+							emit SendMessage(QString("Part Found based on Value '%1':'%2'").arg(part.value).arg(part.footPrint), spdlog::level::level_enum::debug);
+							break;
+						}
 					}
 				}
 			}
@@ -196,7 +228,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 		newlines.push_back(outLine);
 	}
 
-	try 
+	try
 	{
 		if (QFile::exists(schPath + "_old"))
 		{

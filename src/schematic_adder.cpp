@@ -32,7 +32,7 @@ bool SchematicAdder::AddPartNumbersToSchematics(QString const& schDir) const
 	auto const& kicadFiles {directory.entryInfoList(QStringList() << "*.kicad_sch" , QDir::Files)};
 	for (auto const& file : kicadFiles)
 	{
-		emit SendMessage(QString("Updating PN's in %1").arg(file.fileName()), spdlog::level::level_enum::debug);
+		emit SendMessage(QString("Updating PN's in '%1'").arg(file.fileName()), spdlog::level::level_enum::debug);
 		UpdateSchematic(file.absoluteFilePath());
 	}
 	return true;
@@ -99,7 +99,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				lastDigikey = value;
 				if (lastDigikey != newDigikey && !newDigikey.isEmpty())
 				{
-					emit SendMessage(QString("Updating %1 Digikey to %2").arg(lastRef).arg(newDigikey), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Updating '%1' Digikey to '%2'").arg(lastRef).arg(newDigikey), spdlog::level::level_enum::debug);
 					outLine.replace("\"" + lastDigikey + "\"", "\"" + newDigikey + "\"");
 					lastDigikey = newDigikey;
 				}
@@ -109,7 +109,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				lastLcsc = value;
 				if (lastLcsc != newLcsc && !newLcsc.isEmpty())
 				{
-					emit SendMessage(QString("Updating %1 LCSC to %2").arg(lastRef).arg(newLcsc), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Updating '%1' LCSC to '%2'").arg(lastRef).arg(newLcsc), spdlog::level::level_enum::debug);
 					outLine.replace("\"" + lastLcsc + "\"", "\"" + newLcsc + "\"");
 					lastLcsc = newLcsc;
 				}
@@ -119,7 +119,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				lastMPN = value;
 				if (lastMPN != newMPN && !newMPN.isEmpty())
 				{
-					emit SendMessage(QString("Updating %1 MPN to %2").arg(lastRef).arg(newMPN), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Updating '%1' MPN to '%2'").arg(lastRef).arg(newMPN), spdlog::level::level_enum::debug);
 					outLine.replace("\"" + lastMPN + "\"", "\"" + newMPN + "\"");
 					lastMPN = newMPN;
 				}
@@ -157,7 +157,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				int newid = lastID + 1;
 				if (addDigi)
 				{
-					emit SendMessage(QString("Adding %1 DigiKey %2").arg(lastRef).arg(newDigikey), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Adding '%1' DigiKey '%2'").arg(lastRef).arg(newDigikey), spdlog::level::level_enum::debug);
 					QString newTxt = QString("    (property \"Digi-Key_PN\" \"%1\" (id %2) (at %3 0)").arg(newDigikey).arg(newid).arg(lastLoc);
 					newlines.push_back(newTxt);
 					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
@@ -166,7 +166,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				}
 				if (addLcsc)
 				{
-					emit SendMessage(QString("Adding %1 LCSC %2").arg(lastRef).arg(newLcsc), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Adding '%1' LCSC '%2'").arg(lastRef).arg(newLcsc), spdlog::level::level_enum::debug);
 					QString newTxt = QString("    (property \"LCSC\" \"%1\" (id %2) (at %3 0)").arg(newLcsc).arg(newid).arg(lastLoc);
 					newlines.push_back(newTxt);
 					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
@@ -175,7 +175,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				}
 				if (addMPN)
 				{
-					emit SendMessage(QString("Adding %1 MPN %2").arg(lastRef).arg(newMPN), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Adding '%1' MPN '%2'").arg(lastRef).arg(newMPN), spdlog::level::level_enum::debug);
 					QString newTxt = QString("    (property \"MPN\" \"%1\" (id %2) (at %3 0)").arg(newMPN).arg(newid).arg(lastLoc);
 					newlines.push_back(newTxt);
 					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");

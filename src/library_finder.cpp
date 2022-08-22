@@ -85,7 +85,7 @@ bool LibraryFinder::CheckSchematics()
     auto const& kicadFiles {directory.entryInfoList(QStringList() << "*.kicad_sch" , QDir::Files)};
 	for (auto const& file : kicadFiles)
 	{
-		emit SendMessage(QString("Checking %1").arg(file.fileName()), spdlog::level::level_enum::debug);
+		emit SendMessage(QString("Checking '%1'").arg(file.fileName()), spdlog::level::level_enum::debug);
 		CheckSchematic(file.absoluteFilePath());
 	}
 	return true;
@@ -103,13 +103,13 @@ void LibraryFinder::CheckSchematic(QString const& schPath) const
 	}
     bool errorFound{false};
     bool partSection{false};
-    int lineCount{0};
+    //int lineCount{0};
 
     QString reference;
 	QTextStream in(&inFile);
 	while (!in.atEnd())
 	{
-        lineCount++;
+        //lineCount++;
 		QString line = in.readLine();
 
         if(line.contains("(symbol (lib_id"))
@@ -134,7 +134,7 @@ void LibraryFinder::CheckSchematic(QString const& schPath) const
         } 
         if(!HasFootPrint(footprint))
         {
-            emit SendResult(QString("%1:%2 was not found %3:%4").arg(reference).arg(footprint).arg(lineCount).arg(fileData.fileName()),true);
+            emit SendResult(QString("'%1':'%2' was not found in '%3'").arg(reference).arg(footprint).arg(fileData.fileName()),true);
             errorFound = true;
         }
         reference.clear();
@@ -143,7 +143,7 @@ void LibraryFinder::CheckSchematic(QString const& schPath) const
 
     if(!errorFound)
     {
-        emit SendResult(QString("%1 Is Good").arg(inFile.fileName()), false);
+        emit SendResult(QString("'%1' is Good").arg(fileData.fileName()), false);
     }
 }
 

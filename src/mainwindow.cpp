@@ -586,6 +586,7 @@ void MainWindow::AddFootPrintMsg( QString const& message, bool error)
 	if(error)
 	{
 		it->setForeground(QBrush(Qt::red));
+		LogMessage(message, spdlog::level::level_enum::warn);
 	}
 	else
 	{

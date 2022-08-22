@@ -142,13 +142,15 @@ void MainWindow::on_pbRename_clicked()
 
 			if (copy)
 			{
+				LogMessage(QString("Copying %1 to %2").arg(file.fileName()).arg(newFile.fileName()));
 				QFile::copy(file.filePath(), newName);
 			}
 			else
 			{
+				LogMessage(QString("Moving %1 to %2").arg(file.fileName()).arg(newFile.fileName()));
 				QFile::rename(file.filePath(), newName);
 			}
-			QThread::sleep(100);
+			QThread::msleep(100);
 			ReplaceInFile(newName, replaceList);
 		}
 		catch (std::exception ex)
@@ -173,10 +175,12 @@ void MainWindow::on_pbRename_clicked()
 
 			if (copy)
 			{
+				LogMessage(QString("Copying %1 to %2").arg(diSource.string().c_str()).arg(diTarget.string().c_str()));
 				CopyRecursive(diSource, diTarget);
 			}
 			else
 			{
+				LogMessage(QString("Moving %1 to %2").arg(diSource.string().c_str()).arg(diTarget.string().c_str()));
 				MoveRecursive(diSource, diTarget);
 			}
 
@@ -255,7 +259,7 @@ void MainWindow::on_pbImportParts_clicked()
 	QString const partList = QFileDialog::getOpenFileName(this, "Select CSV PartNumbers File", settings->value("last_partnumbers").toString(), tr("CSV Files (*.csv);;All Files (*.*)"));
 	if (!partList.isEmpty())
 	{
-		ImportPartNumerCSV(partList);		
+		ImportPartNumerCSV(partList);
 	}
 }
 
@@ -408,7 +412,7 @@ void MainWindow::ImportPartNumerCSV(QString const& csvFile)
 		SetItem(row, 2, digi);
 		partList.emplace_back(value, footp, digi, lcsc, mpn);
 
-		++row;		
+		++row;
 	}
 	ui->twParts->resizeColumnsToContents();
 }
@@ -546,8 +550,6 @@ void MainWindow::UpdateSchematic(QString const& schPath)
 					lastDigikey = newDigikey;
 				}
 			}
-
-			//found a LCSC property, so update it if needed
 			if (key == "LCSC")
 			{
 				lastLcsc = value;
@@ -597,7 +599,6 @@ void MainWindow::UpdateSchematic(QString const& schPath)
 			}
 		}
 
-//if we hit the pin section without finding a LCSC property, add it
 		QRegularExpressionMatch pm = pinRx.match(line);
 
 		bool addDigi = lastDigikey.isEmpty() && !newDigikey.isEmpty();

@@ -80,7 +80,7 @@ MainWindow::~MainWindow()
 void MainWindow::on_actionOpen_Project_triggered() 
 {
 	//Kicad files (*.pro;*.kicad_pro)|*.pro;*.kicad_pro|All Files|*.*
-	QString const project = QFileDialog::getOpenFileName(this, "Select Kicad File", settings->value("last_project").toString(), tr("Kicad Files (*.pro;*.kicad_pro);;All Files (*.*)"));
+	QString const project = QFileDialog::getOpenFileName(this, "Select Kicad File", settings->value("last_project").toString(), tr("Kicad Files (*.kicad_pro *.pro);;All Files (*.*)"));
 	if (project.isEmpty())
 	{
 		return;

@@ -90,5 +90,7 @@ endif()
 source_group(src FILES ${BASE_SRC})
 source_group(res FILES ${BASE_RES})
 
+if(WIN32)
 windeployqt(${PROJECT_NAME})
+endif()
 

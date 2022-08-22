@@ -43,6 +43,7 @@ public Q_SLOTS:
     void on_pbTextReplace_clicked();
     //3st tab
     void on_pbFindPCB_clicked();
+    void on_pbReloadLibraries_clicked();
     void on_pbCheckFP_clicked();
     //4nd tab
     void on_pbFindProjet_clicked();
@@ -72,7 +73,6 @@ private:
     void ReplaceInFile(QString const& filePath, std::vector<std::pair<QString, QString>> const& replaceList);
     void CopyRecursive(const std::filesystem::path& src, const std::filesystem::path& target) ;
     void MoveRecursive(const std::filesystem::path& src, const std::filesystem::path& target, bool createRoot = true);
-    void UpdateSchematic(QString const& schPath);
     //void LogMessage(std::string const& message, spdlog::level::level_enum llvl = spdlog::level::level_enum::debug)
     //{
     //    LogMessage(QString::fromStdString(message), llvl);

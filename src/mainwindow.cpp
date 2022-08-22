@@ -248,6 +248,18 @@ void MainWindow::on_pbFindPCB_clicked()
 	}
 }
 
+void MainWindow::on_pbReloadLibraries_clicked()
+{
+	QDir directory(ui->leProjectFolder->text());
+	if (!directory.exists())
+	{
+		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
+		return;
+	}
+	ui->twLibraries->clearContents();
+	library_finder->LoadProject(ui->leProjectFolder->text());
+}
+
 void MainWindow::on_pbCheckFP_clicked()
 {
 	if (!QFile::exists(ui->lePCB->text()))
@@ -318,6 +330,8 @@ void MainWindow::SetProject(QString const& project)
 	//		ImportRenameCSV(directory.absolutePath() + "/" + csv);
 	//	}
 	//}
+	ui->twLibraries->clearContents();
+	library_finder->LoadProject(proj.absoluteDir().absolutePath());
 }
 
 void MainWindow::ImportRenameCSV(QString const& csvFile)
@@ -519,11 +533,6 @@ void MainWindow::MoveRecursive(const std::filesystem::path& src, const std::file
 
 		}
 	}
-}
-
-void MainWindow::UpdateSchematic(QString const& schPath)
-{
-	
 }
 
 void MainWindow::on_AddLibrary( QString const& name, QString const& type, QString const& path)

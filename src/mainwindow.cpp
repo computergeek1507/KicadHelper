@@ -6,6 +6,8 @@
 #include "library_finder.h"
 #include "schematic_adder.h"
 
+#include "config.h"
+
 #include <QMessageBox>
 #include <QDesktopServices>
 #include <QSettings>
@@ -51,8 +53,10 @@ MainWindow::MainWindow(QWidget *parent)
 		QMessageBox::warning(this, "Logger Failed", "Logger Failed To Start.");
 	}
 
-	logger->info("Program started");
+	logger->info("Program started v" + std::string( PROJECT_VER));
 	logger->info(std::string("Built with Qt ") + std::string(QT_VERSION_STR));
+
+	setWindowTitle(windowTitle() + " v" + PROJECT_VER);
 
 	settings = std::make_unique< QSettings>(dir + "settings.ini", QSettings::IniFormat);
 

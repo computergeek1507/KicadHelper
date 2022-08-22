@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(KicadHelper VERSION 0.1 LANGUAGES CXX)
+project(KicadHelper VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -34,6 +34,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
+configure_file(src/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
+
 file( GLOB_RECURSE BASE_SRC src/*cpp src/*h)
 file( GLOB_RECURSE BASE_RES res/*ui res/*qrc)
 
@@ -66,10 +68,6 @@ else()
         )
     endif()
 endif()
-
-configure_file(res/config.h.in)
-include_directories(${PROJECT_BINARY_BIN}) // this allows the 'config.h' file to be used throughout the program
-
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets spdlog::spdlog)
 

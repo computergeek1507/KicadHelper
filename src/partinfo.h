@@ -20,4 +20,4 @@ struct PartInfo
 	QString digikey;
 	QString lcsc;
 	QString mpn;
-} ;
+};

@@ -1,4 +1,4 @@
-#include <kicad_utils.h>
+#include "kicad_utils.h"
 
 namespace kicad_utils
 {

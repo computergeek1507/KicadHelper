@@ -1,6 +1,9 @@
 #include "library_finder.h"
 
+#include "kicad_utils.h"
+
 #include <QFile>
+#include <QDir>
 #include <QTextStream>
 #include <QFileInfo>
 #include <QCoreApplication>
@@ -17,31 +20,25 @@ void LibraryFinder::LoadProject(QString const& folder)
     getStockLibraries();
 }
 
-void LibraryFinder::getProjectLibraries() const
+void LibraryFinder::getProjectLibraries()
 {
-    QString localLibPath = m_projectFolder + "fp-lib-table";
+    QString localLibPath = m_projectFolder + "/fp-lib-table";
     if(QFile::exists(localLibPath))
     {
-        ParseLibraries(localLibPath);
+        ParseLibraries(localLibPath, "Project");
     }
 }
 
-void LibraryFinder::getStockLibraries() const
+void LibraryFinder::getStockLibraries()
 {
     if(QFile::exists(getGlobalFootprintTablePath()))
     {
-        ParseLibraries(getGlobalFootprintTablePath());
+        ParseLibraries(getGlobalFootprintTablePath(), "System");
     }
 }
 
-void LibraryFinder::ParseLibraries(QString const& path) const
+void LibraryFinder::ParseLibraries(QString const& path, QString const& level)
 {
-    //\((name)\s(\S+)\)
-    //\((\w+)\s(\S+)\)
-    QRegularExpression nameRx(R"(\((\w+)\s(\S+)\))");
-    QRegularExpression typeRx(R"(\((\w+)\s(\S+)\))");
-    QRegularExpression typeRx(R"(\((\w+)\s(\S+)\))");
-
 	QFile inFile(path);
 
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -56,16 +53,222 @@ void LibraryFinder::ParseLibraries(QString const& path) const
         QString name = getLibParamter("name", line);
         QString type = getLibParamter("type", line);
         QString uri = getLibParamter("uri", line);
+        if(!name.isEmpty() && !type.isEmpty() && !uri.isEmpty() )
+        {
+            emit AddLibrary(level, name, type , uri);
+            libraryList.emplace_back(name, type , uri);
+        }
+	}
+	inFile.close();
+}
 
+bool LibraryFinder::CheckSchematics()
+{
+	if (libraryList.empty())
+	{
+		emit SendMessage("Library List is empty", spdlog::level::level_enum::warn);
+		return false;
+	}
+
+    CreateFootprintList();
+
+	QDir directory(m_projectFolder);
+	if (!directory.exists())
+	{
+		emit SendMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
+		return false;
+	}
+
+    auto const& kicadFiles {directory.entryInfoList(QStringList() << "*.kicad_sch" , QDir::Files)};
+	for (auto const& file : kicadFiles)
+	{
+		emit SendMessage(QString("Checking %1").arg(file.fileName()), spdlog::level::level_enum::debug);
+		CheckSchematic(file.absoluteFilePath());
+	}
+	return true;
+}
+
+void LibraryFinder::CheckSchematic(QString const& schPath) const
+{
+    QFileInfo fileData(schPath);
+    QFile inFile(schPath);
+
+	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		emit SendMessage(QString("Cannot Open %1").arg(schPath), spdlog::level::level_enum::warn);
+		return;
+	}
+    bool errorFound{false};
+    bool partSection{false};
+    int lineCount{0};
+
+    QString reference;
+	QTextStream in(&inFile);
+	while (!in.atEnd())
+	{
+        lineCount++;
+		QString line = in.readLine();
+
+        if(line.contains("(symbol (lib_id"))
+		{
+			partSection = true;
+		}
+        if(!partSection)
+		{
+			continue;
+		}
+
+        QString ref = getSchReference( line);
+        if(!ref.isEmpty())
+        {
+            reference = ref;
+        } 
+
+        QString footprint = getSchFootprint( line);
+        if(footprint.isEmpty())
+        {
+            continue;
+        } 
+        if(!HasFootPrint(footprint))
+        {
+            emit SendResult(QString("%1:%2 was not found %3:%4").arg(reference).arg(footprint).arg(lineCount).arg(fileData.fileName()),true);
+            errorFound = true;
+        }
+        reference.clear();
 	}
 	inFile.close();
 
+    if(!errorFound)
+    {
+        emit SendResult(QString("%1 Is Good").arg(inFile.fileName()), false);
+    }
+}
+
+bool LibraryFinder::HasFootPrint(QString const& footprint) const
+{
+    if(!footprint.contains(":"))
+    {
+        return false;
+    }
+    auto parts {footprint.split(":")};
+
+    if(!footprintList.contains(parts[0]))
+    {
+        return false;
+    }
+
+    auto const& list = footprintList.value(parts[0]);
+
+    return list.contains(parts[1]);
+}
+
+void LibraryFinder::CreateFootprintList()
+{
+    footprintList.clear();
+
+    for(auto const& lib : libraryList)
+    {
+        if(footprintList.contains(lib.name))
+        {
+            SendMessage(QString("Duplicate Libraries %1").arg(lib.name), spdlog::level::level_enum::warn);
+            continue;
+        }
+        QStringList fps; 
+        if(lib.type == "Legacy")
+        {
+            fps = GetLegacyFootPrints(lib.url);
+        }
+        else if(lib.type == "KiCad")
+        {
+            fps = GetKicadFootPrints(lib.url);
+        }
+
+        if(!fps.empty())
+        {
+            footprintList.insert(lib.name,fps );
+        }
+    }
+}
+
+QStringList LibraryFinder::GetLegacyFootPrints(QString const& url) const
+{
+    QStringList list;
+
+    auto fullPath = updatePath(url);
+
+    //QFileInfo fileData(fullPath);
+    QFile inFile(fullPath);
+
+    if(!inFile.exists())
+    {
+        return list;
+    }
+
+	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		return list;
+	}
+
+	QTextStream in(&inFile);
+	while (!in.atEnd())
+	{
+		QString line = in.readLine();
+
+        if(!line.startsWith("DEF"))
+		{
+			continue;
+		}
+
+        auto parts = line.split(" ", Qt::SkipEmptyParts);
+
+        if(parts.count() < 2)
+        {
+            continue;
+        }
+
+        auto name{parts[1]};
+
+        name = kicad_utils::CleanQuotes(name);
+
+        if(name.isEmpty())
+        {
+            continue;
+        }
+
+        list.append(name);
+	}
+	inFile.close();
+
+
+    return list;
+}
+
+QStringList LibraryFinder::GetKicadFootPrints(QString const& url) const
+{
+    QStringList list;
+
+    auto fullPath = updatePath(url);
+
+    QDir directory(fullPath);
+    if(!directory.exists())
+    {
+        return list;
+    }
+
+    auto const& kicadFiles = directory.entryInfoList(QStringList() << "*.kicad_mod" , QDir::Files );
+	for (auto const& file : kicadFiles)
+	{
+        list.append(file.completeBaseName());
+    }
+
+    return list;
 }
 
 QString LibraryFinder::updatePath(QString path) const
 {
     path = path.replace("${KICAD6_FOOTPRINT_DIR}", getGlobalFootprintsPath() );
     path = path.replace("${KIPRJMOD}", m_projectFolder);
+    return path;
 }
 
 QString LibraryFinder::getGlobalFootprintsPath() const
@@ -103,16 +306,62 @@ QString LibraryFinder::getGlobalFootprintTablePath() const
     //C:\Program Files\KiCad\6.0\share\kicad\template\fp-lib-table
 }
 
-QString LibraryFinder::getLibParamter(QString const& line, QString const& parm) const
+QString LibraryFinder::getLibParamter(QString const& parm, QString const& line ) const
 {
-   int stInd =  line.indexOf("(" + parm );
-   int endInd =  line.indexOf(")",stInd );
+    int stInd =  line.indexOf("(" + parm );
+    int endInd =  line.indexOf(")",stInd );
+   
+    if(stInd == endInd || stInd ==-1 || endInd == -1)
+    {
+        return QString();
+    }
+    int nstr {stInd + parm.length() + 2};
+    QString value = line.mid(nstr, endInd - nstr);
+   
+    value = kicad_utils::CleanQuotes(value);
+    return value;
+}
 
-   if(stInd == endInd || stInd ==-1 || endInd == -1)
-   {
-       return QString();
-   }
-   int nstr {stInd + parm.length() + 1};
-   QString value = line.mid(nstr, endInd - nstr);
-   return value;
+QString LibraryFinder::getSchFootprint(QString const& line ) const
+{
+    QString prop(R"((property "Footprint")");
+    int stInd =  line.indexOf(prop );
+
+    if(stInd == -1 )
+    {
+         return QString();
+    }
+    int endInd =  line.indexOf("(",stInd + 1 );
+
+    if(stInd == endInd || stInd ==-1 || endInd == -1)
+    {
+        return QString();
+    }
+    int nstr {stInd + prop.size() + 1};
+    QString value = line.mid(nstr, endInd - nstr - 1);
+  
+    value = kicad_utils::CleanQuotes(value);
+    return value;
+}
+
+QString LibraryFinder::getSchReference(QString const& line ) const
+{
+    QString prop(R"((property "Reference")");
+    int stInd =  line.indexOf(prop );
+
+    if(stInd == -1 )
+    {
+         return QString();
+    }
+    int endInd =  line.indexOf("(",stInd + 1 );
+
+    if(stInd == endInd || stInd ==-1 || endInd == -1)
+    {
+        return QString();
+    }
+    int nstr {stInd + prop.size() + 1};
+    QString value = line.mid(nstr, endInd - nstr - 1);
+  
+    value = kicad_utils::CleanQuotes(value);
+    return value;
 }

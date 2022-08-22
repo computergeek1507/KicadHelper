@@ -29,11 +29,11 @@ bool SchematicAdder::AddPartNumbersToSchematics(QString const& schDir) const
 		return false;
 	}
 
-	QStringList const& kicadFiles = directory.entryList(QStringList() << "*.kicad_sch" , QDir::Files);
+	auto const& kicadFiles {directory.entryInfoList(QStringList() << "*.kicad_sch" , QDir::Files)};
 	for (auto const& file : kicadFiles)
 	{
-		emit SendMessage(QString("Updating PN's in %1").arg(file), spdlog::level::level_enum::debug);
-		UpdateSchematic(directory.absolutePath() + "/" + file);
+		emit SendMessage(QString("Updating PN's in %1").arg(file.fileName()), spdlog::level::level_enum::debug);
+		UpdateSchematic(file.absoluteFilePath());
 	}
 	return true;
 }
@@ -76,12 +76,18 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 	}
 	inFile.close();
 
+	bool partSection{false};
 	for (auto const& line : lines)
 	{
 		QString outLine = line;
 		QRegularExpressionMatch m = propRx.match(line);
 
-		if (m.hasMatch() && line.startsWith("    (property"))
+		if(line.contains("(symbol (lib_id"))
+		{
+			partSection = true;
+		}
+
+		if (m.hasMatch() && line.startsWith("    (property") && partSection)
 		{
 			auto key = m.captured(1);
 			auto	value = m.captured(2);

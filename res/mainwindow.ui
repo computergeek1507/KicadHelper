@@ -18,96 +18,44 @@
     <normaloff>:/KicadHelper/kicad.png</normaloff>:/KicadHelper/kicad.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="0">
-     <widget class="QListWidget" name="lwLogs">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-     </widget>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Project Folder:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="leProject">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="leProjectFolder">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Project:</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
-    <item row="0" column="0">
+    <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
-      <widget class="QWidget" name="tabRename">
-       <attribute name="title">
-        <string>Rename Project</string>
-       </attribute>
-       <layout class="QGridLayout" name="gridLayout_5">
-        <item row="3" column="1">
-         <widget class="QCheckBox" name="cbCopyFiles">
-          <property name="text">
-           <string>Copy Files</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="leOldName"/>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_8">
-          <property name="text">
-           <string>New Name:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="leProject"/>
-        </item>
-        <item row="2" column="1">
-         <widget class="QLineEdit" name="leNewName"/>
-        </item>
-        <item row="3" column="3">
-         <widget class="QPushButton" name="pbRename">
-          <property name="text">
-           <string>Rename</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_6">
-          <property name="text">
-           <string>Project:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_7">
-          <property name="text">
-           <string>Old Name:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="3">
-         <spacer name="verticalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="3">
-         <widget class="QPushButton" name="pbProject">
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="tabReplace">
        <attribute name="title">
         <string>Text Replace</string>
@@ -147,13 +95,6 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="2">
-         <widget class="QPushButton" name="pbTextReplace">
-          <property name="text">
-           <string>Run</string>
-          </property>
-         </widget>
-        </item>
         <item row="3" column="0" colspan="3">
          <widget class="QTableWidget" name="lwWords">
           <attribute name="verticalHeaderMinimumSectionSize">
@@ -174,45 +115,28 @@
           </column>
          </widget>
         </item>
+        <item row="2" column="0" colspan="3">
+         <widget class="QPushButton" name="pbTextReplace">
+          <property name="text">
+           <string>Run</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="tabFootprint">
        <attribute name="title">
-        <string>PCB 6 Footprint Finder</string>
+        <string>Footprint Checker</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="2" column="2">
-         <widget class="QPushButton" name="resizeColumnsToContents">
+        <item row="1" column="1">
+         <widget class="QPushButton" name="pbCheckFP">
           <property name="text">
-           <string>Check FootPrints</string>
+           <string>Check FootPrints in Schematics</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="lePCB"/>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>PCB:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="pbFindPCB">
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QPushButton" name="pbReloadLibraries">
-          <property name="text">
-           <string>Reload Libs</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0" colspan="3">
+        <item row="3" column="0" colspan="2">
          <widget class="QTableWidget" name="twLibraries">
           <attribute name="horizontalHeaderStretchLastSection">
            <bool>true</bool>
@@ -223,6 +147,11 @@
           <attribute name="verticalHeaderDefaultSectionSize">
            <number>30</number>
           </attribute>
+          <column>
+           <property name="text">
+            <string>Level</string>
+           </property>
+          </column>
           <column>
            <property name="text">
             <string>Name</string>
@@ -240,55 +169,27 @@
           </column>
          </widget>
         </item>
+        <item row="1" column="0">
+         <widget class="QPushButton" name="pbReloadLibraries">
+          <property name="text">
+           <string>Reload Libraries</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="2">
+         <widget class="QListWidget" name="lwResults"/>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="tabPartNumber">
        <attribute name="title">
-        <string>PartNumber Finder</string>
+        <string>PartNumber Added</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="1">
-         <widget class="QLineEdit" name="leProjectFolder"/>
-        </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="pbFindProjet">
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Project Folder:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2">
-         <widget class="QPushButton" name="pbSetPartsInSch">
-          <property name="text">
-           <string>Set Part</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Part Number CSV</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QPushButton" name="pbImportParts">
-          <property name="text">
-           <string>Import Parts</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
          <widget class="QLineEdit" name="lePartsCSV"/>
         </item>
-        <item row="3" column="0" colspan="3">
+        <item row="2" column="0" colspan="3">
          <widget class="QTableWidget" name="twParts">
           <property name="columnCount">
            <number>5</number>
@@ -326,8 +227,96 @@
           </column>
          </widget>
         </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Part Number CSV</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="pbImportParts">
+          <property name="text">
+           <string>Import Parts</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="3">
+         <widget class="QPushButton" name="pbSetPartsInSch">
+          <property name="text">
+           <string>Add Part Numbers to Schematics</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tabRename">
+       <attribute name="title">
+        <string>Rename Project</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_5">
+        <item row="3" column="1">
+         <widget class="QPushButton" name="pbRename">
+          <property name="text">
+           <string>Rename</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QCheckBox" name="cbCopyFiles">
+          <property name="text">
+           <string>Copy Files</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Old Name:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="leOldName"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>New Name:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="leNewName"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QListWidget" name="lwLogs">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
      </widget>
     </item>
    </layout>
@@ -346,6 +335,7 @@
      <string>File</string>
     </property>
     <addaction name="actionOpen_Project"/>
+    <addaction name="actionOpen_Explorer"/>
     <addaction name="actionOpen_Logs"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
@@ -366,6 +356,11 @@
   <action name="actionOpen_Project">
    <property name="text">
     <string>Open Project</string>
+   </property>
+  </action>
+  <action name="actionOpen_Explorer">
+   <property name="text">
+    <string>Open Explorer</string>
    </property>
   </action>
  </widget>

@@ -31,28 +31,30 @@ public:
 public Q_SLOTS:
 
     void on_actionOpen_Project_triggered();
+    void on_actionOpen_Explorer_triggered();
     void on_actionOpen_Logs_triggered();
     void on_actionClose_triggered();
 
     //1st tab
-    void on_pbProject_clicked();
-    void on_pbRename_clicked();
-    //2nd tab
     void on_pbFindSchematic_clicked();
     void on_pbImportCSV_clicked();
     void on_pbTextReplace_clicked();
-    //3st tab
-    void on_pbFindPCB_clicked();
+    //2nd tab
     void on_pbReloadLibraries_clicked();
     void on_pbCheckFP_clicked();
-    //4nd tab
-    void on_pbFindProjet_clicked();
+    //3rd tab
     void on_pbImportParts_clicked();
     void on_pbSetPartsInSch_clicked();
+    //4nd tab
+    void on_pbRename_clicked();
 
     void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 
-    void on_AddLibrary( QString const& name, QString const& type, QString const& path);
+    void AddLibrary(QString const& level, QString const& name, QString const& type, QString const& path);
+
+    void ClearLibrarys();
+
+    void AddFootPrintMsg( QString const& message, bool error);
 
 private:
     Ui::MainWindow *ui;
@@ -63,20 +65,13 @@ private:
     std::unique_ptr<SchematicAdder> schematic_adder{ nullptr };
 
     std::vector<std::pair<QString, QString>> replaceWordsList;
-    
 
     void SetProject(QString const& project);
     void ImportRenameCSV(QString const& csvFile);
     void ImportPartNumerCSV(QString const& csvFile);
 
-    QString CleanQuotes(QString item) const;
     void ReplaceInFile(QString const& filePath, std::vector<std::pair<QString, QString>> const& replaceList);
     void CopyRecursive(const std::filesystem::path& src, const std::filesystem::path& target) ;
     void MoveRecursive(const std::filesystem::path& src, const std::filesystem::path& target, bool createRoot = true);
-    //void LogMessage(std::string const& message, spdlog::level::level_enum llvl = spdlog::level::level_enum::debug)
-    //{
-    //    LogMessage(QString::fromStdString(message), llvl);
-    //}
-
 };
 #endif // MAINWINDOW_H

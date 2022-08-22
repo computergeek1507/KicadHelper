@@ -6,6 +6,8 @@
 #include "library_finder.h"
 #include "schematic_adder.h"
 
+#include "kicad_utils.h"
+
 #include "config.h"
 
 #include <QMessageBox>
@@ -62,7 +64,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	library_finder = std::make_unique<LibraryFinder>();
 	connect( library_finder.get(), &LibraryFinder::SendMessage, this, &MainWindow::LogMessage );
-	connect( library_finder.get(), &LibraryFinder::AddLibrary, this, &MainWindow::on_AddLibrary );
+	connect( library_finder.get(), &LibraryFinder::AddLibrary, this, &MainWindow::AddLibrary );
+	connect( library_finder.get(), &LibraryFinder::SendResult, this, &MainWindow::AddFootPrintMsg );
 
 	schematic_adder = std::make_unique<SchematicAdder>();
 	connect( schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
@@ -101,6 +104,11 @@ void MainWindow::on_actionOpen_Project_triggered()
 	SetProject(project);
 }
 
+void MainWindow::on_actionOpen_Explorer_triggered()
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(ui->leProjectFolder->text()));
+}
+
 void MainWindow::on_actionOpen_Logs_triggered() 
 {
 	QDesktopServices::openUrl(QUrl::fromLocalFile(QCoreApplication::applicationDirPath() + "/log/"));
@@ -109,11 +117,6 @@ void MainWindow::on_actionOpen_Logs_triggered()
 void MainWindow::on_actionClose_triggered() 
 {
 	close();
-}
-
-void MainWindow::on_pbProject_clicked() 
-{
-	on_actionOpen_Project_triggered();
 }
 
 void MainWindow::on_pbRename_clicked()
@@ -207,16 +210,16 @@ void MainWindow::on_pbRename_clicked()
 
 void MainWindow::on_pbFindSchematic_clicked()
 {
-	QString const schematic = QFileDialog::getOpenFileName(this, "Select Kicad File", settings->value("last_project").toString(), tr("Kicad Files (*.kicad_pcb *.kicad_sch *.sch);;All Files (*.*)"));
+	auto const schematic = QFileDialog::getOpenFileNames(this, "Select Kicad File", ui->leProjectFolder->text(), tr("Kicad Files (*.kicad_pcb *.kicad_sch *.sch);;All Files (*.*)"));
 	if (!schematic.isEmpty())
 	{
-		ui->leSchematic->setText(schematic);
+		ui->leSchematic->setText(schematic.join(","));
 	}
 }
 
 void MainWindow::on_pbImportCSV_clicked()
 {
-	QString const rename = QFileDialog::getOpenFileName(this, "Select CSV Rename File", settings->value("last_rename").toString(), tr("CSV Files (*.csv);;All Files (*.*)"));
+	QString const rename = QFileDialog::getOpenFileName(this, "Select CSV Rename File", ui->leProjectFolder->text(), tr("CSV Files (*.csv);;All Files (*.*)"));
 	if (!rename.isEmpty())
 	{
 		ImportRenameCSV(rename);
@@ -230,21 +233,18 @@ void MainWindow::on_pbTextReplace_clicked()
 		LogMessage("Replace List is empty", spdlog::level::level_enum::warn);
 		return;
 	}
-	if (!QFile::exists(ui->leSchematic->text()))
-	{
-		LogMessage("File Doesn't Exist", spdlog::level::level_enum::warn);
-		return;
-	}
-	ReplaceInFile(ui->leSchematic->text(), replaceWordsList);
-	LogMessage(QString("Updating Text on %1 ").arg(ui->leSchematic->text()));
-}
 
-void MainWindow::on_pbFindPCB_clicked()
-{
-	QString const pcbs = QFileDialog::getOpenFileName(this, "Select Kicad PCB File", settings->value("last_project").toString(), tr("Kicad PCB Files (*.kicad_pcb);;All Files (*.*)"));
-	if (!pcbs.isEmpty())
+	auto files {ui->leSchematic->text().split(",")};
+
+	for(auto const& file : files )
 	{
-		ui->lePCB->setText(pcbs);
+		if (!QFile::exists(file))
+		{
+			LogMessage("File Doesn't Exist", spdlog::level::level_enum::warn);
+			continue;
+		}
+		ReplaceInFile(file, replaceWordsList);
+		LogMessage(QString("Updating Text on %1 ").arg(file));
 	}
 }
 
@@ -256,27 +256,14 @@ void MainWindow::on_pbReloadLibraries_clicked()
 		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
 		return;
 	}
-	ui->twLibraries->clearContents();
+	ClearLibrarys();
 	library_finder->LoadProject(ui->leProjectFolder->text());
 }
 
 void MainWindow::on_pbCheckFP_clicked()
 {
-	if (!QFile::exists(ui->lePCB->text()))
-	{
-		LogMessage("File Doesn't Exist", spdlog::level::level_enum::warn);
-		return;
-	}
-	//todo
-}
-
-void MainWindow::on_pbFindProjet_clicked()
-{
-	QString directory = QFileDialog::getExistingDirectory(this, "Set Kicad Project Directory", "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-	if (!directory.isEmpty())
-	{
-		ui->leProjectFolder->setText(directory);
-	}	
+	ui->lwResults->clear();
+	library_finder->CheckSchematics();
 }
 
 void MainWindow::on_pbImportParts_clicked()
@@ -307,17 +294,19 @@ void MainWindow::SetProject(QString const& project)
 	ui->leNewName->setText(proj.baseName());
 
 	QDir directory(proj.absoluteDir().absolutePath());
-	QStringList const& kicadFiles = directory.entryList(QStringList() << "*.kicad_sch" << "*.kicad_pcb", QDir::Files);
-	for(auto const& file: kicadFiles) {
-		if (file.endsWith(".kicad_pcb"))
+	auto const& kicadFiles = directory.entryInfoList(QStringList() << "*.kicad_sch" << "*.kicad_pcb", QDir::Files);
+	for(auto const& file: kicadFiles)
+	{
+		auto suf{file.completeSuffix()};
+		if (file.completeSuffix().compare("kicad_pcb") == 0)
 		{
-			ui->lePCB->setText(directory.absolutePath() + "/" + file);
-			ui->leSchematic->setText(directory.absolutePath() + "/" + file);
+			//ui->lePCB->setText(directory.absolutePath() + "/" + file);
+			ui->leSchematic->setText(file.absoluteFilePath());
 			break;
 		}
 	}
 
-	//QStringList const& csvFiles = directory.entryList(QStringList() << "*.csv", QDir::Files);
+	//QStringList const& csvFiles = directory.entryInfoList(QStringList() << "*.csv", QDir::Files);
 	//for (auto const& csv : csvFiles) {
 	//	if (csv.contains("partnumbers") || csv.contains("part_numbers"))
 	//	{
@@ -330,7 +319,7 @@ void MainWindow::SetProject(QString const& project)
 	//		ImportRenameCSV(directory.absolutePath() + "/" + csv);
 	//	}
 	//}
-	ui->twLibraries->clearContents();
+	ClearLibrarys();
 	library_finder->LoadProject(proj.absoluteDir().absolutePath());
 }
 
@@ -358,8 +347,8 @@ void MainWindow::ImportRenameCSV(QString const& csvFile)
 	{
 		if (row.size() > 1)
 		{
-			SetImportItem(rowIdx, 0, CleanQuotes(row[0].c_str()));
-			SetImportItem(rowIdx, 1, CleanQuotes(row[1].c_str()));
+			SetImportItem(rowIdx, 0, kicad_utils::CleanQuotes(row[0].c_str()));
+			SetImportItem(rowIdx, 1, kicad_utils::CleanQuotes(row[1].c_str()));
 			replaceWordsList.emplace_back(row[0].c_str(), row[1].c_str());
 			++rowIdx;
 		}
@@ -405,13 +394,13 @@ void MainWindow::ImportPartNumerCSV(QString const& csvFile)
 		if (line.size() > 3)
 		{
 			lcsc = line[3].c_str();
-			lcsc = CleanQuotes(lcsc);
+			lcsc = kicad_utils::CleanQuotes(lcsc);
 			SetItem(row, 3, lcsc);
 		}
 		if (line.size() > 4)
 		{
 			mpn = line[4].c_str();
-			mpn = CleanQuotes(mpn);
+			mpn = kicad_utils::CleanQuotes(mpn);
 			SetItem(row, 4, mpn);
 		}
 
@@ -425,7 +414,7 @@ void MainWindow::ImportPartNumerCSV(QString const& csvFile)
 		}
 
 		QString value = line[valuCol].c_str();
-		value = CleanQuotes(value);
+		value = kicad_utils::CleanQuotes(value);
 
 		if (value == "Value")
 		{
@@ -435,18 +424,18 @@ void MainWindow::ImportPartNumerCSV(QString const& csvFile)
 		if(!lcscBOM)
 		{
 			digi = line[2].c_str();
-			digi = CleanQuotes(digi);
+			digi = kicad_utils::CleanQuotes(digi);
 			SetItem(row, 2, digi);
 		}
 		else
 		{
 			lcsc = line[2].c_str();
-			lcsc = CleanQuotes(lcsc);
+			lcsc = kicad_utils::CleanQuotes(lcsc);
 			SetItem(row, 3, lcsc);
 		}
 
 		QString footp = line[fpCol].c_str();
-		footp = CleanQuotes(footp);
+		footp = kicad_utils::CleanQuotes(footp);
 		
 		SetItem(row, 0, value);
 		SetItem(row, 1, footp);
@@ -462,18 +451,42 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QS
 {
 	try 
 	{
+		QStringList lines;
 		QFile f(filePath);
 		if (!f.open(QFile::ReadOnly | QFile::Text))
 		{
 			return;
 		}
 		QTextStream in(&f);
-		QString content{ in.readAll() };
+		
+
+		while (!in.atEnd())
+		{
+			QString line = in.readLine();
+
+
+			lines.append(line);
+		}
+
 		f.close();
 
-		for (auto const& [Item1, Item2] : replaceList)
+		QStringList newlines;
+		int lineNum{0};
+		for (auto const& line : lines)
 		{
-			content = content.replace(QRegularExpression(Item1), Item2);
+			++lineNum;
+			auto newline = line;
+			for (auto const& [Item1, Item2] : replaceList)
+			{
+
+				newline.replace(QRegularExpression(Item1), Item2);
+				
+			}
+			if(newline != line)
+			{
+				LogMessage( QString("%1 Update to '%2'").arg(lineNum).arg(newline));
+			}
+			newlines.append(newline);
 		}
 
 		QFile outFile(filePath);
@@ -482,7 +495,10 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QS
 			return;
 		}
 		QTextStream out(&outFile);
-		out << content;
+		for (auto const& content : newlines)
+		{
+			out << content << "\n";
+		}
 		outFile.close();
 	}
 	catch (std::exception& ex)
@@ -535,24 +551,48 @@ void MainWindow::MoveRecursive(const std::filesystem::path& src, const std::file
 	}
 }
 
-void MainWindow::on_AddLibrary( QString const& name, QString const& type, QString const& path)
+void MainWindow::AddLibrary( QString const& level, QString const& name, QString const& type, QString const& path)
 {
+	auto SetItem = [&](int row, int col, QString const& text)
+	{
+		ui->twLibraries->setItem(row, col, new QTableWidgetItem());
+		ui->twLibraries->item(row, col)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+		ui->twLibraries->item(row, col)->setText(text);
+	};
 
+	int row = ui->twLibraries->rowCount();
+	ui->twLibraries->insertRow(row);
+
+	SetItem(row, 0, level);
+	SetItem(row, 1, name);
+	SetItem(row, 2, type);
+	SetItem(row, 3, path);
+
+	ui->twLibraries->resizeColumnsToContents();
 }
 
-QString MainWindow::CleanQuotes(QString item) const
+void MainWindow::ClearLibrarys()
 {
-	//item = item.trimmed();
-	if (item.startsWith("\""))
+	ui->twLibraries->clearContents();
+	while( ui->twLibraries->rowCount() != 0 )
 	{
-		item.remove(0, 1);
+		ui->twLibraries->removeRow(0);
 	}
-	if (item.endsWith("\""))
+}
+
+void MainWindow::AddFootPrintMsg( QString const& message, bool error)
+{
+	QListWidgetItem* it = new QListWidgetItem(message);
+	if(error)
 	{
-		int pos = item.lastIndexOf("\"");
-		item = item.left(pos);
+		it->setForeground(QBrush(Qt::red));
 	}
-	return item;
+	else
+	{
+		it->setForeground(QBrush(Qt::blue));
+	}
+	ui->lwResults->addItem(it);
+	ui->lwResults->scrollToBottom();
 }
 
 void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum llvl)

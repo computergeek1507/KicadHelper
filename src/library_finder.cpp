@@ -14,6 +14,7 @@ LibraryFinder::LibraryFinder()
 }
 void LibraryFinder::LoadProject(QString const& folder)
 {
+    libraryList.clear();
     m_projectFolder = folder;
     getProjectLibraries();
     getStockLibraries();

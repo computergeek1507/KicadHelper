@@ -14,7 +14,15 @@
 
 SchematicAdder::SchematicAdder()
 {
+	//Regex to look through schematic property, if we hit the pin section without finding a LCSC property, add it
+	//keep track of property ids and Reference property location to use with new LCSC property
 
+	// R"(\\(property\\s\\"(.*)\\"\s\\"(.*)\\"\s\\(id\\s(\\d +)\\)\\s\\(at\\s(-?\\d+.\\d+\\s-?\\d+.\\d+)\s\\d+\\)"
+	//\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\)
+	propRx = QRegularExpression (
+		R"(\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\))"
+	);
+	pinRx = QRegularExpression (R"(\(pin\s\"(.*)\"\s\()");
 }
 
 void SchematicAdder::AddPart(PartInfo part)
@@ -81,15 +89,6 @@ bool SchematicAdder::AddPartNumbersToSchematics(QString const& schDir) const
 
 void SchematicAdder::UpdateSchematic(QString const& schPath) const
 {
-	//Regex to look through schematic property, if we hit the pin section without finding a LCSC property, add it
-	//keep track of property ids and Reference property location to use with new LCSC property
-	// R"(\\(property\\s\\"(.*)\\"\s\\"(.*)\\"\s\\(id\\s(\\d +)\\)\\s\\(at\\s(-?\\d+.\\d+\\s-?\\d+.\\d+)\s\\d+\\)"
-	//\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\)
-	QRegularExpression propRx(
-		R"(\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\))"
-	);
-	QRegularExpression pinRx(R"(\(pin\s\"(.*)\"\s\()");
-
 	int lastID{ -1 };
 	QString lastLoc;
 	QString lastDigikey;
@@ -317,7 +316,7 @@ void SchematicAdder::LoadJsonFile(const QString& jsonFile)
 	emit RedrawPartList(false);
 }
 
-void SchematicAdder::SaveJsonFile(const QString& jsonFile)
+void SchematicAdder::SaveJsonFile(const QString& jsonFile) const
 {
 	QFile saveFile(jsonFile);
 	//emit SendMessage("Saving json file " + jsonFile, spdlog::level::level_enum::debug);
@@ -358,7 +357,7 @@ void SchematicAdder::read(QJsonObject const& json)
 	}
 }
 
-void SchematicAdder::ImportPartNumerCSV(QString const& csvFile)
+void SchematicAdder::ImportPartNumerCSV(QString const& csvFile, bool overideParts)
 {
 	auto lines{ csvparser::parsefile(csvFile.toStdString()) };
 
@@ -406,15 +405,10 @@ void SchematicAdder::ImportPartNumerCSV(QString const& csvFile)
 		QString footp = line[fpCol].c_str();
 		footp = kicad_utils::CleanQuotes(footp);
 
-		if (std::any_of(partList.begin(), partList.end(), [&](auto const & elem)
-			{ return elem.value == value && elem.footPrint == footp; })) {
-
-			continue;
-		}
-
-		//if (partList)
-		//{
-		
+		//if (std::any_of(partList.begin(), partList.end(), [&](auto const & elem)
+		//	{ return elem.value == value && elem.footPrint == footp; })) {
+		//
+		//	continue;
 		//}
 
 		if (!lcscBOM)
@@ -427,7 +421,154 @@ void SchematicAdder::ImportPartNumerCSV(QString const& csvFile)
 			lcsc = line[2].c_str();
 			lcsc = kicad_utils::CleanQuotes(lcsc);
 		}
-		partList.emplace_back(std::move(value), std::move(footp), std::move(digi), std::move(lcsc), std::move(mpn));
+		if (auto const found { std::find_if(partList.begin(), partList.end(), [&](auto const & elem)
+							{ return elem.value == value && elem.footPrint == footp; })};found == partList.end()) 
+		{
+			partList.emplace_back(std::move(value), std::move(footp), std::move(digi), std::move(lcsc), std::move(mpn));
+		}
+		else
+		{
+			if(overideParts)
+			{
+				auto index = std::distance(partList.begin(), found);
+				partList[index] = std::move(PartInfo(std::move(value), std::move(footp), std::move(digi), std::move(lcsc), std::move(mpn)));
+			}
+		}
 	}
 	emit RedrawPartList(true);
+}
+
+void SchematicAdder::ImportSchematicParts(QStringList const& schFiles, bool overideParts)
+{
+	bool added {false};
+	for(auto const& schPath : schFiles)
+	{
+		QString lastDigikey;
+		QString lastLcsc;
+		QString lastMPN;
+		QString lastRef;
+		QString lastValue;
+		QString lastFP;
+
+		std::vector<QString> lines;
+
+		QFile inFile(schPath);
+
+		if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+		{
+			emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn);
+			return;
+		}
+		QTextStream in(&inFile);
+		while (!in.atEnd())
+		{
+			lines.emplace_back(in.readLine());
+		}
+		inFile.close();
+		emit SendMessage("Importing From: " + schPath, spdlog::level::level_enum::debug);
+
+		bool partSection{false};
+		for (auto const& line : lines)
+		{
+			QString outLine = line;
+			QRegularExpressionMatch m = propRx.match(line);
+
+			if(line.contains("(symbol (lib_id"))
+			{
+				partSection = true;
+			}
+
+			if (m.hasMatch() && partSection)
+			{
+				auto key = m.captured(1);
+				auto	value = m.captured(2);
+
+				if (key == "Digi-Key_PN")
+				{
+					lastDigikey = value;
+				}
+				if (key == "LCSC")
+				{
+					lastLcsc = value;
+				}
+				if (key == "MPN")
+				{
+					lastMPN = value;
+				}
+
+				if (key == "Reference")
+				{
+					lastRef = value;
+				}
+				if (key == "Value")
+				{
+					lastValue = value;
+				}
+				if (key == "Footprint")
+				{
+					lastFP = value;
+				}
+			}
+
+			QRegularExpressionMatch pm = pinRx.match(line);
+
+			if (pm.hasMatch()) 
+			{
+				if (!lastValue.isEmpty() && !lastFP.isEmpty())
+				{
+					if (!lastDigikey.isEmpty() || !lastLcsc.isEmpty() || !lastMPN.isEmpty())
+					{
+						if (auto const found { std::find_if(partList.begin(), partList.end(), [&](auto const & elem)
+							{ return elem.value == lastValue && elem.footPrint == lastFP; })};found == partList.end()) 
+						{
+							partList.emplace_back(lastValue, lastFP,lastDigikey, lastLcsc, lastMPN );
+							added = true;
+						}
+						else
+						{
+							if(overideParts)
+							{
+								auto index = std::distance(partList.begin(), found);
+								partList[index] = std::move(PartInfo(lastValue, lastFP,lastDigikey, lastLcsc, lastMPN));
+								added = true;
+							}
+						}
+					}
+				}
+				lastDigikey = "";
+				lastLcsc = "";
+				lastMPN = "";
+				lastRef = "";
+				lastValue ="";
+				lastFP ="";
+			}
+		}
+	}
+	if(added)
+	{
+		emit RedrawPartList(true);
+	}
+	else
+	{
+		emit SendMessage("No parts Added...", spdlog::level::level_enum::debug);
+	}
+}
+
+void SchematicAdder::SavePartNumerCSV(QString const& fileName) const
+{
+	QFile outFile(fileName);
+	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+		return;
+	}
+	QTextStream out(&outFile);
+	//"Value","Footprint","Digi-Key_PN","LCSC","MPN"
+	out << "\"Value\",\"Footprint\",\"Digi-Key_PN\",\"LCSC\",\"MPN\"\n";
+	for (auto const& part : partList)
+	{
+		out << part.asString() << "\n";
+	}	
+	outFile.close();
+	emit SendMessage(QString("Saved PartList CSV to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug);
 }

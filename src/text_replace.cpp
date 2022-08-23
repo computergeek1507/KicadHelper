@@ -132,3 +132,20 @@ void TextReplace::ImportMappingCSV(QString const& csvFile)
 	}
 	emit RedrawTextReplace(true);
 }
+
+void TextReplace::SaveMappingCSV(QString const& fileName) const
+{
+	QFile outFile(fileName);
+	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+		return;
+	}
+	QTextStream out(&outFile);
+	for (auto const& replace : replaceList)
+	{
+		out << replace.asString() << "\n";
+	}	
+	outFile.close();
+	emit SendMessage(QString("Saved Mapping CSV to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug);
+}

@@ -22,6 +22,8 @@
 #include <QTextStream>
 #include <QThread>
 #include <QInputDialog>
+#include <QCommandLineParser>
+#include <QTimer>
 
 #include "spdlog/spdlog.h"
 
@@ -34,6 +36,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+	QCoreApplication::setApplicationName(PROJECT_NAME);
+    QCoreApplication::setApplicationVersion(PROJECT_VER);
     ui->setupUi(this);
 
 	auto const log_name{ "log.txt" };
@@ -49,10 +53,11 @@ MainWindow::MainWindow(QWidget *parent)
 		auto rotating = std::make_shared<spdlog::sinks::rotating_file_sink_mt>( file, 1024 * 1024, 5, false);
 		//rotating->set_level(spdlog::level::debug);
 		//rotating->flush
-		
+
 		logger = std::make_shared<spdlog::logger>("kicadhelper", rotating);
 		logger->flush_on(spdlog::level::debug);
 		logger->set_level(spdlog::level::debug);
+		logger->set_pattern("[%D %H:%M:%S] [%L] %v");
 
 		//spdlog::logger logger("multi_sink", { console_sink, file_sink });
 	}
@@ -61,8 +66,8 @@ MainWindow::MainWindow(QWidget *parent)
 		QMessageBox::warning(this, "Logger Failed", "Logger Failed To Start.");
 	}
 
-	logger->info("Program started v" + std::string( PROJECT_VER));
-	logger->info(std::string("Built with Qt ") + std::string(QT_VERSION_STR));
+	//logger->info("Program started v" + std::string( PROJECT_VER));
+	//logger->info(std::string("Built with Qt ") + std::string(QT_VERSION_STR));
 
 	setWindowTitle(windowTitle() + " v" + PROJECT_VER);
 
@@ -83,21 +88,11 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(text_replace.get(), &TextReplace::RedrawTextReplace, this, &MainWindow::RedrawMappingList);
 	connect(text_replace.get(), &TextReplace::UpdateTextRow, this, &MainWindow::UpdateMappingRow);
 
-	auto lastProject{ settings->value("last_project").toString() };
+	bool overrideImport = settings->value("override", false).toBool();
 
-	if (QFile::exists(appdir + "/part_numbers.json"))
-	{
-		schematic_adder->LoadJsonFile(appdir + "/part_numbers.json");
-	}
-	if (QFile::exists(appdir + "/mapping.json"))
-	{
-		text_replace->LoadJsonFile(appdir + "/mapping.json");
-	}
+	ui->actionOverride->setChecked(overrideImport);
 
-	if (QFile::exists(lastProject))
-	{
-		SetProject(lastProject);
-	}
+	QTimer::singleShot( 500, this, SLOT( ProcessCommandLine() ) );
 }
 
 MainWindow::~MainWindow()
@@ -105,7 +100,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_actionOpen_Project_triggered() 
+void MainWindow::on_actionOpen_Project_triggered()
 {
 	//Kicad files (*.pro;*.kicad_pro)|*.pro;*.kicad_pro|All Files|*.*
 	QString const project = QFileDialog::getOpenFileName(this, "Select Kicad File", settings->value("last_project").toString(), tr("Kicad Files (*.kicad_pro *.pro);;All Files (*.*)"));
@@ -116,41 +111,110 @@ void MainWindow::on_actionOpen_Project_triggered()
 	SetProject(project);
 }
 
-void MainWindow::on_actionReload_Project_triggered() 
+void MainWindow::on_actionReload_Project_triggered()
 {
 	SetProject(ui->leProject->text());
 }
 
-void MainWindow::on_actionImport_PartList_triggered()
-{
-	QString const partList = QFileDialog::getOpenFileName(this, "Select CSV PartNumbers File", settings->value("last_partnumbers").toString(), tr("CSV Files (*.csv);;All Files (*.*)"));
-	if (!partList.isEmpty())
-	{
-		schematic_adder->ImportPartNumerCSV(partList);
-		settings->setValue("last_partnumbers", partList);
-		settings->sync();
-	}
-}
-
 void MainWindow::on_actionImport_Rename_Map_triggered()
 {
-	QString const rename = QFileDialog::getOpenFileName(this, "Select CSV Rename File", settings->value("last_rename").toString(), tr("CSV Files (*.csv);;All Files (*.*)"));
+	QString const rename = QFileDialog::getOpenFileName(this, "Select Rename File", settings->value("last_rename").toString(), tr("CSV Files (*.csv);;JSON Files (*.json);;All Files (*.*)"));
 	if (!rename.isEmpty())
 	{
-		text_replace->ImportMappingCSV(rename);
-		settings->setValue("last_rename", rename);
-		settings->sync();
+		if(rename.endsWith("json", Qt::CaseInsensitive))
+		{
+			text_replace->LoadJsonFile(rename);
+		}
+		else
+		{
+			text_replace->ImportMappingCSV(rename);
+			settings->setValue("last_rename", rename);
+			settings->sync();
+		}
 	}
 }
 
-void MainWindow::on_actionOpen_Logs_triggered() 
+void MainWindow::on_actionImport_PartList_triggered()
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(appdir + "/log/"));
+	QString const partList = QFileDialog::getOpenFileName(this, "Select PartNumbers File", settings->value("last_partnumbers").toString(), tr("CSV Files (*.csv);;JSON Files (*.json);;All Files (*.*)"));
+	if (!partList.isEmpty())
+	{	
+		if(partList.endsWith("json", Qt::CaseInsensitive))
+		{
+			schematic_adder->LoadJsonFile(partList);
+		}
+		else
+		{
+			schematic_adder->ImportPartNumerCSV(partList, ui->actionOverride->isChecked());
+			settings->setValue("last_partnumbers", partList);
+			settings->sync();
+		}
+	}
 }
 
-void MainWindow::on_actionClose_triggered() 
+void MainWindow::on_actionImport_Parts_from_Schematic_triggered()
+{
+	QStringList const schList = QFileDialog::getOpenFileNames(this, "Select Kicad Schematic Files",settings->value("last_project").toString(), tr("Kicad Schematic Files (*.kicad_sch);;All Files (*.*)"));
+	if (!schList.isEmpty())
+	{
+		schematic_adder->ImportSchematicParts(schList,ui->actionOverride->isChecked());
+	}
+}
+
+void MainWindow::on_actionOverride_triggered()
+{
+	settings->setValue("override", ui->actionOverride->isChecked());
+	settings->sync();
+}
+
+void MainWindow::on_actionExport_Rename_CSV_triggered()
+{
+	QString const rename = QFileDialog::getSaveFileName(this, "Save Rename File", settings->value("last_rename").toString(), tr("CSV Files (*.csv);;JSON Files (*.json);;All Files (*.*)"));
+	if (!rename.isEmpty())
+	{
+		if(rename.endsWith("json", Qt::CaseInsensitive))
+		{
+			text_replace->SaveJsonFile(rename);
+		}
+		else
+		{
+			text_replace->SaveMappingCSV(rename);
+		}
+	}
+}
+
+void MainWindow::on_actionExport_PartList_CSV_triggered()
+{
+	QString const partList = QFileDialog::getSaveFileName(this, "Save PartNumbers File", settings->value("last_partnumbers").toString(), tr("CSV Files (*.csv);;JSON Files (*.json);;All Files (*.*)"));
+	if (!partList.isEmpty())
+	{
+		if(partList.endsWith("json", Qt::CaseInsensitive))
+		{
+			schematic_adder->SaveJsonFile(partList);
+		}
+		else
+		{
+			schematic_adder->SavePartNumerCSV(partList);
+		}
+	}
+}
+
+void MainWindow::on_actionClose_triggered()
 {
 	close();
+}
+
+void MainWindow::on_actionAbout_triggered()
+{
+	auto hpp {helpText.right(helpText.size() - helpText.indexOf("Options:"))};
+	QString text {QString("Kicad Helper v%1\nQT v%2\n\n\n%3").arg(PROJECT_VER).arg(QT_VERSION_STR).arg(hpp)};
+
+	QMessageBox::about( this, "About Kicad Helper", text );
+}
+
+void MainWindow::on_actionOpen_Logs_triggered()
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(appdir + "/log/"));
 }
 
 void MainWindow::on_pbProjectFolder_clicked()
@@ -305,7 +369,7 @@ void MainWindow::on_pbRemoveMap_clicked()
 	for (int i = rowsList.count() - 1; i >= 0; i--)
 	{
 		text_replace->RemoveMapping(rowsList.at(i));
-	}	
+	}
 }
 
 void MainWindow::on_pbReloadLibraries_clicked()
@@ -326,7 +390,7 @@ void MainWindow::on_pbCheckFP_clicked()
 	library_finder->CheckSchematics();
 }
 
-void MainWindow::on_pbSetPartsInSch_clicked() 
+void MainWindow::on_pbSetPartsInSch_clicked()
 {
 	schematic_adder->AddPartNumbersToSchematics(ui->leProjectFolder->text());
 }
@@ -341,7 +405,7 @@ void MainWindow::on_pbAddPN_clicked()
 	}
 }
 
-void MainWindow::on_pbRemovePN_clicked()
+void MainWindow::on_pbDeletePN_clicked()
 {
 	//ui->twParts
 	QModelIndexList indexes = ui->twParts->selectionModel()->selectedIndexes();
@@ -377,7 +441,7 @@ void MainWindow::on_lwWords_cellDoubleClicked(int row, int column)
 	{
 		ui->lwWords->item(row, column)->setText(text);
 		text_replace->UpdateMapping(ui->lwWords->item(row, 0)->text(), ui->lwWords->item(row, 1)->text(),row);
-	}	
+	}
 }
 
 void MainWindow::on_twParts_cellDoubleClicked(int row, int column)
@@ -415,6 +479,8 @@ void MainWindow::SetProject(QString const& project)
 
 	QDir directory(proj.absoluteDir().absolutePath());
 	auto const& kicadFiles = directory.entryInfoList(QStringList() << "*.kicad_sch" << "*.kicad_pcb", QDir::Files);
+	
+	ui->lwFiles->clear();
 	for(auto const& file: kicadFiles)
 	{
 		ui->lwFiles->addItem(file.fileName());
@@ -457,7 +523,7 @@ void MainWindow::RedrawPartList(bool save)
 	if (save)
 	{
 		schematic_adder->SaveJsonFile(appdir + "/part_numbers.json");
-	}	
+	}
 }
 
 void MainWindow::RedrawMappingList(bool save)
@@ -501,7 +567,7 @@ void MainWindow::UpdateMappingRow(int row)
 
 void MainWindow::ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList)
 {
-	try 
+	try
 	{
 		QStringList lines;
 		QFile f(filePath);
@@ -586,12 +652,12 @@ void MainWindow::MoveRecursive(const std::filesystem::path& src, const std::file
 	{
 		std::filesystem::path destFile = target / p.filename();
 
-		if (std::filesystem::is_directory(p)) 
+		if (std::filesystem::is_directory(p))
 		{
 			std::filesystem::create_directory(destFile);
 			MoveRecursive(p, destFile, false);
 		}
-		else		
+		else
 		{
 			std::filesystem::rename(p, destFile);
 		}
@@ -643,6 +709,23 @@ void MainWindow::AddFootPrintMsg( QString const& message, bool error)
 	ui->lwResults->scrollToBottom();
 }
 
+void MainWindow::SaveFootPrintReport(QString const& fileName)
+{
+	QFile outFile(fileName);
+	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		LogMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+		return;
+	}
+	QTextStream out(&outFile);
+	for (int i = 0; i< ui->lwResults->count(); ++i)
+	{
+		out << ui->lwResults->item(i)->text() << "\n";
+	}	
+	outFile.close();
+	LogMessage(QString("Saved Report to '%1'").arg(outFile.fileName()));
+}
+
 void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum llvl)
 {
 	logger->log(llvl, message.toStdString());
@@ -669,4 +752,106 @@ void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum ll
 	ui->lwLogs->scrollToBottom();
 
 	qApp->processEvents();
+}
+
+void MainWindow::ProcessCommandLine()
+{
+	QCommandLineParser parser;
+    parser.setApplicationDescription("Kicad Helper");
+
+    QCommandLineOption projectOption(QStringList() << "p" << "project",
+             "Project File to Load.",
+            "project");
+    parser.addOption(projectOption);
+
+    QCommandLineOption mappingOption(QStringList() << "m" << "mapping",
+             "Text Replace Mapping JSON to Load.",
+            "mapping");
+    parser.addOption(mappingOption);
+
+    QCommandLineOption partlistOption(QStringList() << "l" << "partlist",
+             "Part Number List JSON to Load.",
+            "partlist");
+    parser.addOption(partlistOption);
+
+	QCommandLineOption reportOption(QStringList() << "o" << "report",
+             "Save Check Schematic FootPrints Report.",
+            "report");
+    parser.addOption(reportOption);
+
+	QCommandLineOption addOption(QStringList() << "a" << "add",
+            "Add Parts Numbers to Schematic.");
+	parser.addOption(addOption);
+
+	QCommandLineOption checkOption(QStringList() << "c" << "check",
+            "Check Schematic FootPrints.");
+    parser.addOption(checkOption);
+
+	QCommandLineOption replaceOption(QStringList() << "r" << "replace",
+            "File to Repace Values in.",
+			"replace");
+
+    parser.addOption(replaceOption);
+
+	QCommandLineOption exitOption(QStringList() << "x" << "exit",
+            "Exit Software when done.");
+    parser.addOption(exitOption);
+
+	helpText = parser.helpText();
+
+    parser.parse(QCoreApplication::arguments());
+
+	auto lastProject{ settings->value("last_project").toString() };
+
+	if(!parser.value(partlistOption).isEmpty() && QFile::exists(parser.value(partlistOption)))
+	{
+		schematic_adder->LoadJsonFile(parser.value(partlistOption));
+	}
+	else if (QFile::exists(appdir + "/part_numbers.json"))
+	{
+		schematic_adder->LoadJsonFile(appdir + "/part_numbers.json");
+	}
+
+	if(!parser.value(mappingOption).isEmpty() && QFile::exists(parser.value(mappingOption)))
+	{
+		text_replace->LoadJsonFile(parser.value(mappingOption));
+	}
+	else if (QFile::exists(appdir + "/mapping.json"))
+	{
+		text_replace->LoadJsonFile(appdir + "/mapping.json");
+	}
+
+	if(!parser.value(projectOption).isEmpty() && QFile::exists(parser.value(projectOption)))
+	{
+		SetProject(parser.value(projectOption));
+	}
+	else if (QFile::exists(lastProject))
+	{
+		SetProject(lastProject);
+	}
+
+	if(!parser.value(replaceOption).isEmpty() && QFile::exists(parser.value(replaceOption)))
+	{
+		ReplaceInFile(parser.value(replaceOption), text_replace->getReplaceList());
+	}
+
+	if(parser.isSet(addOption))
+	{
+		on_pbAddPN_clicked();
+	}
+
+	if(parser.isSet(checkOption))
+	{
+		on_pbCheckFP_clicked();
+	}
+
+	if(!parser.value(reportOption).isEmpty())
+	{
+		SaveFootPrintReport(parser.value(reportOption));
+	}
+
+	if(parser.isSet(exitOption))
+	{
+		close();
+	}
 }

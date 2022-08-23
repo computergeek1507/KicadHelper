@@ -34,10 +34,19 @@ public Q_SLOTS:
 
     void on_actionOpen_Project_triggered();
     void on_actionReload_Project_triggered();
-    void on_actionImport_PartList_triggered();
+
     void on_actionImport_Rename_Map_triggered();
-    void on_actionOpen_Logs_triggered();
+    void on_actionImport_PartList_triggered();
+    void on_actionImport_Parts_from_Schematic_triggered();
+    void on_actionOverride_triggered();
+
+    void on_actionExport_Rename_CSV_triggered();
+    void on_actionExport_PartList_CSV_triggered();
+
     void on_actionClose_triggered();
+
+    void on_actionAbout_triggered();
+    void on_actionOpen_Logs_triggered();
 
     void on_pbProjectFolder_clicked();
 
@@ -51,7 +60,7 @@ public Q_SLOTS:
     //3rd tab
     void on_pbSetPartsInSch_clicked();
     void on_pbAddPN_clicked();
-    void on_pbRemovePN_clicked();
+    void on_pbDeletePN_clicked();
     //4nd tab
     void on_pbRename_clicked();
 
@@ -72,6 +81,10 @@ public Q_SLOTS:
     void UpdatePartRow(int row);
     void UpdateMappingRow(int row);
 
+    void ProcessCommandLine();
+
+    void SaveFootPrintReport(QString const& fileName);
+
 private:
     Ui::MainWindow *ui;
 
@@ -81,8 +94,8 @@ private:
     std::unique_ptr<SchematicAdder> schematic_adder{ nullptr };
     std::unique_ptr<TextReplace> text_replace{ nullptr };
 
-
     QString appdir;
+    QString helpText;
 
     void SetProject(QString const& project);
 

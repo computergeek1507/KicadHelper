@@ -21,6 +21,7 @@ public:
 	void LoadJsonFile(const QString& jsonFile);
 	void SaveJsonFile(const QString& jsonFile);
 	void ImportMappingCSV(QString const& csvFile);
+	void SaveMappingCSV(QString const& fileName) const;
 	void ClearReplaceList(){ replaceList.clear(); }
 
 	void AddingMapping(QString const& from, QString const& to);

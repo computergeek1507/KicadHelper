@@ -30,6 +30,11 @@ struct Mapping
 		to = json["to"].toString();
 	}
 
+	QString asString() const
+	{
+		return "\"" + from + "\",\"" + to + "\"";
+	}
+
 	QString from;
 	QString to;
 };

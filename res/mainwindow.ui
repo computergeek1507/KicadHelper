@@ -75,141 +75,9 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="tabReplace">
-       <attribute name="title">
-        <string>Text Replace</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>PCB/Schematic:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QListWidget" name="lwFiles"/>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pbTextReplace">
-          <property name="text">
-           <string>Run Text Replace</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QTableWidget" name="lwWords">
-          <attribute name="verticalHeaderMinimumSectionSize">
-           <number>20</number>
-          </attribute>
-          <attribute name="verticalHeaderDefaultSectionSize">
-           <number>25</number>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>From</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>To</string>
-           </property>
-          </column>
-         </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QPushButton" name="pbAddMap">
-            <property name="text">
-             <string>Add Map...</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pbRemoveMap">
-            <property name="text">
-             <string>Remove Map</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabFootprint">
-       <attribute name="title">
-        <string>Footprint Checker</string>
-       </attribute>
-       <layout class="QGridLayout" name="gridLayout_3">
-        <item row="3" column="0" colspan="2">
-         <widget class="QListWidget" name="lwResults"/>
-        </item>
-        <item row="2" column="0">
-         <widget class="QPushButton" name="pbReloadLibraries">
-          <property name="text">
-           <string>Reload Libraries</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QPushButton" name="pbCheckFP">
-          <property name="text">
-           <string>Check FootPrints in Schematics</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0" colspan="2">
-         <widget class="QTableWidget" name="twLibraries">
-          <attribute name="horizontalHeaderStretchLastSection">
-           <bool>true</bool>
-          </attribute>
-          <attribute name="verticalHeaderMinimumSectionSize">
-           <number>20</number>
-          </attribute>
-          <attribute name="verticalHeaderDefaultSectionSize">
-           <number>30</number>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>Level</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Name</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Type</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Path</string>
-           </property>
-          </column>
-         </widget>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="tabPartNumber">
        <attribute name="title">
-        <string>PartNumber Added</string>
+        <string>PartNumber Adder</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
@@ -285,6 +153,138 @@
              <string>Delete PN</string>
             </property>
            </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabFootprint">
+       <attribute name="title">
+        <string>Footprint Checker</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="3" column="0" colspan="2">
+         <widget class="QListWidget" name="lwResults"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="pbReloadLibraries">
+          <property name="text">
+           <string>Reload Libraries</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="pbCheckFP">
+          <property name="text">
+           <string>Check FootPrints in Schematics</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QTableWidget" name="twLibraries">
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="verticalHeaderMinimumSectionSize">
+           <number>20</number>
+          </attribute>
+          <attribute name="verticalHeaderDefaultSectionSize">
+           <number>30</number>
+          </attribute>
+          <column>
+           <property name="text">
+            <string>Level</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Type</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Path</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabReplace">
+       <attribute name="title">
+        <string>Text Replace</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>PCB/Schematic:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="lwFiles"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pbTextReplace">
+          <property name="text">
+           <string>Run Text Replace</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="lwWords">
+          <attribute name="verticalHeaderMinimumSectionSize">
+           <number>20</number>
+          </attribute>
+          <attribute name="verticalHeaderDefaultSectionSize">
+           <number>25</number>
+          </attribute>
+          <column>
+           <property name="text">
+            <string>From</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>To</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QPushButton" name="pbAddMap">
+            <property name="text">
+             <string>Add Map...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pbRemoveMap">
+            <property name="text">
+             <string>Remove Map</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </item>
@@ -367,24 +367,47 @@
      <x>0</x>
      <y>0</y>
      <width>1046</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
+    <widget class="QMenu" name="menuImport">
+     <property name="title">
+      <string>Import</string>
+     </property>
+     <addaction name="actionImport_Rename_Map"/>
+     <addaction name="actionImport_PartList"/>
+     <addaction name="actionImport_Parts_from_Schematic"/>
+     <addaction name="separator"/>
+     <addaction name="actionOverride"/>
+    </widget>
+    <widget class="QMenu" name="menuExport">
+     <property name="title">
+      <string>Export</string>
+     </property>
+     <addaction name="actionExport_Rename_CSV"/>
+     <addaction name="actionExport_PartList_CSV"/>
+    </widget>
     <addaction name="actionOpen_Project"/>
     <addaction name="actionReload_Project"/>
     <addaction name="separator"/>
-    <addaction name="actionImport_Rename_Map"/>
-    <addaction name="actionImport_PartList"/>
-    <addaction name="separator"/>
-    <addaction name="actionOpen_Logs"/>
+    <addaction name="menuImport"/>
+    <addaction name="menuExport"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
    </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+    <addaction name="actionAbout"/>
+    <addaction name="actionOpen_Logs"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionClose">
@@ -394,12 +417,12 @@
   </action>
   <action name="actionOpen_Logs">
    <property name="text">
-    <string>Open Logs</string>
+    <string>Open Logs...</string>
    </property>
   </action>
   <action name="actionOpen_Project">
    <property name="text">
-    <string>Open Project</string>
+    <string>Open Project...</string>
    </property>
   </action>
   <action name="actionOpen_Explorer">
@@ -409,17 +432,48 @@
   </action>
   <action name="actionImport_PartList">
    <property name="text">
-    <string>Import PartList List</string>
+    <string>PartList CSV...</string>
    </property>
   </action>
   <action name="actionImport_Rename_Map">
    <property name="text">
-    <string>Import Rename Map</string>
+    <string>Rename CSV...</string>
    </property>
   </action>
   <action name="actionReload_Project">
    <property name="text">
     <string>Reload Project</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About...</string>
+   </property>
+  </action>
+  <action name="actionImport_Parts_from_Schematic">
+   <property name="text">
+    <string>PartList from Schematic...</string>
+   </property>
+  </action>
+  <action name="actionExport_PartList_CSV">
+   <property name="text">
+    <string>PartList CSV...</string>
+   </property>
+  </action>
+  <action name="actionExport_Rename_CSV">
+   <property name="text">
+    <string>Rename CSV...</string>
+   </property>
+  </action>
+  <action name="actionOverride">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Override Existing Parts</string>
    </property>
   </action>
  </widget>

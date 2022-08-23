@@ -22,8 +22,11 @@ public:
 	void UpdatePart(QString const& value, QString const& fp, QString const& digi, QString const& lcsc, QString const& mpn, int index);
 
 	void LoadJsonFile(const QString& jsonFile);
-	void SaveJsonFile(const QString& jsonFile);
-	void ImportPartNumerCSV(QString const& csvFile);
+	void SaveJsonFile(const QString& jsonFile) const;
+	void ImportPartNumerCSV(QString const& csvFile, bool overideParts);
+	void ImportSchematicParts(QStringList const& schFiles, bool overideParts);
+	void SavePartNumerCSV(QString const& fileName) const;
+
 	void ClearPartList(){ partList.clear(); }
 
 	std::vector<PartInfo> const& getPartList() const { return partList; }
@@ -35,6 +38,9 @@ Q_SIGNALS:
 
 private:
 	std::vector<PartInfo> partList;
+
+	QRegularExpression propRx;
+	QRegularExpression pinRx;
 
 	void UpdateSchematic(QString const& schPath) const;
 	void write(QJsonObject& json) const;

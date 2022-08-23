@@ -39,6 +39,11 @@ struct PartInfo
 		mpn = json["mpn"].toString();
 	}
 
+	QString asString() const
+	{
+		return "\"" + value + "\",\"" + footPrint + "\",\"" + digikey + "\",\"" + lcsc + "\",\"" + mpn + "\"";
+	}
+
 	QString value;
 	QString footPrint;
 	QString digikey;

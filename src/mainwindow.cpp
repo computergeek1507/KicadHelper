@@ -9,6 +9,8 @@
 #include "addpartnumber.h"
 #include "addmapping.h"
 
+#include "mapping.h"
+
 #include "kicad_utils.h"
 
 #include "config.h"
@@ -19,6 +21,7 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QThread>
+#include <QInputDialog>
 
 #include "spdlog/spdlog.h"
 
@@ -73,10 +76,12 @@ MainWindow::MainWindow(QWidget *parent)
 	schematic_adder = std::make_unique<SchematicAdder>();
 	connect( schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
 	connect(schematic_adder.get(), &SchematicAdder::RedrawPartList, this, &MainWindow::RedrawPartList);
+	connect(schematic_adder.get(), &SchematicAdder::UpdatePartRow, this, &MainWindow::UpdatePartRow);
 
 	text_replace = std::make_unique<TextReplace>();
 	connect(text_replace.get(), &TextReplace::SendMessage, this, &MainWindow::LogMessage);
 	connect(text_replace.get(), &TextReplace::RedrawTextReplace, this, &MainWindow::RedrawMappingList);
+	connect(text_replace.get(), &TextReplace::UpdateTextRow, this, &MainWindow::UpdateMappingRow);
 
 	auto lastProject{ settings->value("last_project").toString() };
 
@@ -129,10 +134,12 @@ void MainWindow::on_actionImport_PartList_triggered()
 
 void MainWindow::on_actionImport_Rename_Map_triggered()
 {
-	QString const rename = QFileDialog::getOpenFileName(this, "Select CSV Rename File", ui->leProjectFolder->text(), tr("CSV Files (*.csv);;All Files (*.*)"));
+	QString const rename = QFileDialog::getOpenFileName(this, "Select CSV Rename File", settings->value("last_rename").toString(), tr("CSV Files (*.csv);;All Files (*.*)"));
 	if (!rename.isEmpty())
 	{
 		text_replace->ImportMappingCSV(rename);
+		settings->setValue("last_rename", rename);
+		settings->sync();
 	}
 }
 
@@ -165,7 +172,7 @@ void MainWindow::on_pbRename_clicked()
 		return;
 	}
 
-	std::vector<std::pair<QString, QString>> replaceList;
+	std::vector<Mapping> replaceList;
 	replaceList.emplace_back(ui->leOldName->text() , ui->leNewName->text());
 
 	bool const copy = ui->cbCopyFiles->isChecked();
@@ -359,12 +366,38 @@ void MainWindow::on_pbRemovePN_clicked()
 
 void MainWindow::on_lwWords_cellDoubleClicked(int row, int column)
 {
+	auto header{ ui->lwWords->horizontalHeaderItem(column)->text() };
+	auto value{ ui->lwWords->item(row, column)->text() };
 
+	bool ok;
+	QString text = QInputDialog::getText(this, header,
+		header, QLineEdit::Normal,
+		value, &ok);
+	if (ok && !text.isEmpty())
+	{
+		ui->lwWords->item(row, column)->setText(text);
+		text_replace->UpdateMapping(ui->lwWords->item(row, 0)->text(), ui->lwWords->item(row, 1)->text(),row);
+	}	
 }
 
 void MainWindow::on_twParts_cellDoubleClicked(int row, int column)
 {
+	auto header{ ui->twParts->horizontalHeaderItem(column)->text() };
+	auto value{ ui->twParts->item(row, column)->text() };
 
+	bool ok;
+	QString text = QInputDialog::getText(this, header,
+		header, QLineEdit::Normal,
+		value, &ok);
+	if (ok && !text.isEmpty())
+	{
+		ui->twParts->item(row, column)->setText(text);
+		schematic_adder->UpdatePart(ui->twParts->item(row, 0)->text(),
+									ui->twParts->item(row, 1)->text(),
+									ui->twParts->item(row, 2)->text(),
+									ui->twParts->item(row, 3)->text(),
+									ui->twParts->item(row, 4)->text(), row);
+	}
 }
 
 void MainWindow::SetProject(QString const& project)
@@ -436,15 +469,15 @@ void MainWindow::RedrawMappingList(bool save)
 		ui->lwWords->item(row, col)->setText(text);
 	};
 	ui->lwWords->clearContents();
-	ui->lwWords->clear();
+	//ui->lwWords->clear();
 
 	ui->lwWords->setRowCount(text_replace->getReplaceList().size());
 
 	int rowIdx{ 0 };
-	for (auto const& [from, to] : text_replace->getReplaceList())
+	for (auto const& map : text_replace->getReplaceList())
 	{
-		SetImportItem(rowIdx, 0, from);
-		SetImportItem(rowIdx, 1, to);
+		SetImportItem(rowIdx, 0, map.from);
+		SetImportItem(rowIdx, 1, map.to);
 		++rowIdx;
 	}
 
@@ -456,7 +489,17 @@ void MainWindow::RedrawMappingList(bool save)
 	}
 }
 
-void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QString, QString>> const& replaceList)
+void MainWindow::UpdatePartRow(int row)
+{
+	schematic_adder->SaveJsonFile(appdir + "/part_numbers.json");
+}
+
+void MainWindow::UpdateMappingRow(int row)
+{
+	text_replace->SaveJsonFile(appdir + "/mapping.json");
+}
+
+void MainWindow::ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList)
 {
 	try 
 	{
@@ -484,9 +527,9 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QS
 		{
 			++lineNum;
 			auto newline = line;
-			for (auto const& [Item1, Item2] : replaceList)
+			for (auto const& mapp : replaceList)
 			{
-				newline.replace(QRegularExpression(Item1), Item2);
+				newline.replace(QRegularExpression(mapp.from), mapp.to);
 			}
 			if(newline != line)
 			{

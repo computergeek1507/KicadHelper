@@ -8,12 +8,14 @@
 #include <QString>
 #include <QObject>
 
+#include "mapping.h"
+
 class TextReplace : public QObject
 {
 Q_OBJECT
 
 public:
-	TextReplace( );
+	TextReplace();
     ~TextReplace() {}
 
 	void LoadJsonFile(const QString& jsonFile);
@@ -23,15 +25,17 @@ public:
 
 	void AddingMapping(QString const& from, QString const& to);
 	void RemoveMapping(int index);
+	void UpdateMapping(QString const& from, QString const& to, int index);
 
-	std::vector<std::pair<QString, QString>> const& getReplaceList() const { return replaceList; }
+	std::vector<Mapping> const& getReplaceList() const { return replaceList; }
 
 Q_SIGNALS:
 	void SendMessage( QString const& message, spdlog::level::level_enum llvl) const;
 	void RedrawTextReplace(bool save) const;
+	void UpdateTextRow(int index) const;
 
 private:
-	std::vector<std::pair<QString, QString>> replaceList;
+	std::vector<Mapping> replaceList;
 
 	void write(QJsonObject& json) const;
 	void read(QJsonObject const& json);

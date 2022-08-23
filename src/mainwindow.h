@@ -20,6 +20,7 @@ QT_END_NAMESPACE
 class LibraryFinder;
 class SchematicAdder;
 class TextReplace;
+struct Mapping;
 
 class MainWindow : public QMainWindow
 {
@@ -68,6 +69,9 @@ public Q_SLOTS:
     void RedrawPartList(bool save);
     void RedrawMappingList(bool save);
 
+    void UpdatePartRow(int row);
+    void UpdateMappingRow(int row);
+
 private:
     Ui::MainWindow *ui;
 
@@ -82,7 +86,7 @@ private:
 
     void SetProject(QString const& project);
 
-    void ReplaceInFile(QString const& filePath, std::vector<std::pair<QString, QString>> const& replaceList);
+    void ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList);
     void CopyRecursive(const std::filesystem::path& src, const std::filesystem::path& target) ;
     void MoveRecursive(const std::filesystem::path& src, const std::filesystem::path& target, bool createRoot = true);
 };

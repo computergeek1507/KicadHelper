@@ -19,6 +19,8 @@ public:
 	bool AddPartNumbersToSchematics(QString const& schDir) const;
 	void AddPart(PartInfo part );
 	void RemovePart(int index);
+	void UpdatePart(QString const& value, QString const& fp, QString const& digi, QString const& lcsc, QString const& mpn, int index);
+
 	void LoadJsonFile(const QString& jsonFile);
 	void SaveJsonFile(const QString& jsonFile);
 	void ImportPartNumerCSV(QString const& csvFile);
@@ -29,6 +31,7 @@ public:
 Q_SIGNALS:
 	void SendMessage( QString const& message, spdlog::level::level_enum llvl) const;
 	void RedrawPartList( bool save) const;
+	void UpdatePartRow(int index) const;
 
 private:
 	std::vector<PartInfo> partList;

@@ -38,6 +38,24 @@ void SchematicAdder::RemovePart(int index)
 	emit RedrawPartList(true);
 }
 
+void SchematicAdder::UpdatePart(QString const& value, QString const& fp, QString const& digi, QString const& lcsc, QString const& mpn, int index)
+{
+	//if (std::any_of(partList.begin(), partList.end(), [&](auto const& elem)
+	//	{ return elem.value == value && elem.footPrint == fp; })) {
+	//	return;
+	//}
+	if (index < 0 || index > partList.size())
+	{
+		return;
+	}
+	partList.at(index).value = value;
+	partList.at(index).footPrint = fp;
+	partList.at(index).digikey = digi;
+	partList.at(index).lcsc = lcsc;
+	partList.at(index).mpn = mpn;
+	emit UpdatePartRow(index);
+}
+
 bool SchematicAdder::AddPartNumbersToSchematics(QString const& schDir) const
 {
 	if (partList.empty())

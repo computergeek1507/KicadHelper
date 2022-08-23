@@ -19,7 +19,7 @@ TextReplace::TextReplace()
 void TextReplace::AddingMapping(QString const& from, QString const& to)
 {
 	if (std::any_of(replaceList.begin(), replaceList.end(), [&](auto const& elem)
-		{ return elem.first == from; })) {
+		{ return elem.from == from; })) {
 		return;
 	}
 	replaceList.emplace_back(from, to);
@@ -34,6 +34,21 @@ void TextReplace::RemoveMapping(int index)
 	}
 	replaceList.erase(replaceList.begin() + index);
 	emit RedrawTextReplace(true);
+}
+
+void TextReplace::UpdateMapping(QString const& from, QString const& to, int index) 
+{
+	//if (std::any_of(replaceList.begin(), replaceList.end(), [&](auto const& elem)
+	//	{ return elem.first == from; })) {
+	//	return;
+	//}
+	if (index < 0 || index > replaceList.size())
+	{
+		return;
+	}
+	replaceList.at(index).from = from;
+	replaceList.at(index).to = to;
+	emit UpdateTextRow(index);
 }
 
 void TextReplace::LoadJsonFile(const QString& jsonFile)
@@ -77,11 +92,10 @@ void TextReplace::SaveJsonFile(const QString& jsonFile)
 void TextReplace::write(QJsonObject& json) const
 {
 	QJsonArray mappingArray;
-	for (auto const& [from, to] : replaceList)
+	for (auto const& mapp : replaceList)
 	{
 		QJsonObject mapObj;
-		mapObj["from"] = from;
-		mapObj["to"] = to;
+		mapp.write(mapObj);
 		mappingArray.append(mapObj);
 	}
 	json["mappings"] = mappingArray;
@@ -95,7 +109,7 @@ void TextReplace::read(QJsonObject const& json)
 	for (auto const& mapp : mappingArray)
 	{
 		QJsonObject mapObj = mapp.toObject();
-		replaceList.emplace_back(mapObj["from"].toString(), mapObj["to"].toString());
+		replaceList.emplace_back(mapObj);
 	}
 }
 
@@ -109,7 +123,7 @@ void TextReplace::ImportMappingCSV(QString const& csvFile)
 		{
 			auto from{ kicad_utils::CleanQuotes(row[0].c_str()) };
 			if (std::any_of(replaceList.begin(), replaceList.end(), [&](auto const& elem)
-				{ return elem.first == from; })) {
+				{ return elem.from == from; })) {
 
 				continue;
 			}

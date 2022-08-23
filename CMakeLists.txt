@@ -39,6 +39,8 @@ configure_file(src/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
 file( GLOB_RECURSE BASE_SRC src/*cpp src/*h)
 file( GLOB_RECURSE BASE_RES res/*ui res/*qrc)
 
+qt5_wrap_ui(BASE_SRC res/addmapping.ui)
+qt5_wrap_ui(BASE_SRC res/addpartnumber.ui)
 qt5_wrap_ui(BASE_SRC res/mainwindow.ui)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

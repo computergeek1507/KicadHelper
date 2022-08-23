@@ -1,18 +1,41 @@
 #include "schematic_adder.h"
 
+#include "csvparser.h"
+
+#include "kicad_utils.h"
+
 #include <QFile>
 #include <QDir>
 #include <QTextStream>
 #include <QRegularExpression>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 SchematicAdder::SchematicAdder()
 {
 
 }
 
-void SchematicAdder::AddPart(QString value, QString footPrint,  QString digikey, QString lcsc, QString mpn )
+void SchematicAdder::AddPart(PartInfo part)
 {
-	partList.emplace_back(std::move(value),std::move( footPrint), std::move(digikey), std::move(lcsc), std::move(mpn));
+	if (std::any_of(partList.begin(), partList.end(), [&](auto const& elem)
+		{ return elem.value == part.value && elem.footPrint == part.footPrint; })) {
+
+		return;
+	}
+	partList.push_back(part);
+	emit RedrawPartList(true);
+}
+
+void SchematicAdder::RemovePart(int index)
+{
+	if (index < 0 || index > partList.size())
+	{
+		return;
+	}
+	partList.erase(partList.begin() + index);
+	emit RedrawPartList(true);
 }
 
 bool SchematicAdder::AddPartNumbersToSchematics(QString const& schDir) const
@@ -253,4 +276,140 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 		out << line << "\n";
 	}	
 	outFile.close();
+}
+
+void SchematicAdder::LoadJsonFile(const QString& jsonFile)
+{
+	QFile loadFile(jsonFile);
+	//emit SendMessage("Loading json file " + jsonFile, spdlog::level::level_enum::debug);
+	if (!loadFile.open(QIODevice::ReadOnly))
+	{
+		emit SendMessage("Error Opening: " + jsonFile, spdlog::level::level_enum::err);
+		return;
+	}
+
+	QByteArray saveData = loadFile.readAll();
+
+	QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
+
+	read(loadDoc.object());
+
+	emit SendMessage("Loaded Json: " + jsonFile, spdlog::level::level_enum::debug);
+	//Q_EMIT RedrawScreen();
+	emit RedrawPartList(false);
+}
+
+void SchematicAdder::SaveJsonFile(const QString& jsonFile)
+{
+	QFile saveFile(jsonFile);
+	//emit SendMessage("Saving json file " + jsonFile, spdlog::level::level_enum::debug);
+	if (!saveFile.open(QIODevice::WriteOnly))
+	{
+		emit SendMessage("Error Saving: " + jsonFile, spdlog::level::level_enum::err);
+		return;
+	}
+
+	QJsonObject projectObject;
+	write(projectObject);
+	QJsonDocument saveDoc(projectObject);
+	saveFile.write(saveDoc.toJson());
+	emit SendMessage("Saved Json to: " + jsonFile, spdlog::level::level_enum::debug);
+}
+
+void SchematicAdder::write(QJsonObject& json) const
+{
+	QJsonArray partArray;
+	for (auto const& part : partList)
+	{
+		QJsonObject partObj;
+		part.write(partObj);
+		partArray.append(partObj);
+	}
+	json["parts"] = partArray;
+}
+
+void SchematicAdder::read(QJsonObject const& json)
+{
+	partList.clear();
+
+	QJsonArray partArray = json["parts"].toArray();
+	for (auto const& part : partArray)
+	{
+		QJsonObject npcObject = part.toObject();
+		partList.emplace_back(npcObject);
+	}
+}
+
+void SchematicAdder::ImportPartNumerCSV(QString const& csvFile)
+{
+	auto lines{ csvparser::parsefile(csvFile.toStdString()) };
+
+	int valuCol{ 0 };
+	int fpCol{ 1 };
+	int lcscCol{ 3 };
+	bool lcscBOM{ false };
+	for (auto const& line : lines)
+	{
+		if (line.size() < 3)
+		{
+			continue;
+		}
+		QString lcsc;
+		QString mpn;
+		QString digi;
+		if (line.size() > 3)
+		{
+			lcsc = line[3].c_str();
+			lcsc = kicad_utils::CleanQuotes(lcsc);
+		}
+		if (line.size() > 4)
+		{
+			mpn = line[4].c_str();
+			mpn = kicad_utils::CleanQuotes(mpn);
+		}
+
+		if (line[2] == "LCSC Part")//Kicad Tools File over Kicad BOM export
+		{
+			valuCol = 1;
+			fpCol = 0;
+			lcscCol = 3;
+			lcscBOM = true;
+			continue;
+		}
+
+		QString value = line[valuCol].c_str();
+		value = kicad_utils::CleanQuotes(value);
+
+		if (value == "Value")
+		{
+			continue;
+		}
+
+		QString footp = line[fpCol].c_str();
+		footp = kicad_utils::CleanQuotes(footp);
+
+		if (std::any_of(partList.begin(), partList.end(), [&](auto const & elem)
+			{ return elem.value == value && elem.footPrint == footp; })) {
+
+			continue;
+		}
+
+		//if (partList)
+		//{
+		
+		//}
+
+		if (!lcscBOM)
+		{
+			digi = line[2].c_str();
+			digi = kicad_utils::CleanQuotes(digi);
+		}
+		else
+		{
+			lcsc = line[2].c_str();
+			lcsc = kicad_utils::CleanQuotes(lcsc);
+		}
+		partList.emplace_back(std::move(value), std::move(footp), std::move(digi), std::move(lcsc), std::move(mpn));
+	}
+	emit RedrawPartList(true);
 }

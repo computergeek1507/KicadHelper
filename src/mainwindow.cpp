@@ -1,10 +1,13 @@
 #include "mainwindow.h"
-#include "./ui_mainwindow.h"
 
-#include "csvparser.h"
+#include "./ui_mainwindow.h"
 
 #include "library_finder.h"
 #include "schematic_adder.h"
+#include "text_replace.h"
+
+#include "addpartnumber.h"
+#include "addmapping.h"
 
 #include "kicad_utils.h"
 
@@ -32,9 +35,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 	auto const log_name{ "log.txt" };
 
-	QString const dir = QCoreApplication::applicationDirPath();
-	std::filesystem::create_directory(dir.toStdString());
-	QString logdir = dir + "/log/";
+	appdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+	std::filesystem::create_directory(appdir.toStdString());
+	QString logdir = appdir + "/log/";
 	std::filesystem::create_directory(logdir.toStdString());
 
 	try
@@ -60,7 +63,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	setWindowTitle(windowTitle() + " v" + PROJECT_VER);
 
-	settings = std::make_unique< QSettings>(dir + "settings.ini", QSettings::IniFormat);
+	settings = std::make_unique< QSettings>(appdir + "/settings.ini", QSettings::IniFormat);
 
 	library_finder = std::make_unique<LibraryFinder>();
 	connect( library_finder.get(), &LibraryFinder::SendMessage, this, &MainWindow::LogMessage );
@@ -69,19 +72,23 @@ MainWindow::MainWindow(QWidget *parent)
 
 	schematic_adder = std::make_unique<SchematicAdder>();
 	connect( schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
+	connect(schematic_adder.get(), &SchematicAdder::RedrawPartList, this, &MainWindow::RedrawPartList);
+
+	text_replace = std::make_unique<TextReplace>();
+	connect(text_replace.get(), &TextReplace::SendMessage, this, &MainWindow::LogMessage);
+	connect(text_replace.get(), &TextReplace::RedrawTextReplace, this, &MainWindow::RedrawMappingList);
 
 	auto lastProject{ settings->value("last_project").toString() };
-	auto lastRename{ settings->value("last_rename").toString() };
-	auto lastPartList{ settings->value("last_partnumbers").toString() };
 
-	if (QFile::exists(lastRename))
+	if (QFile::exists(appdir + "/part_numbers.json"))
 	{
-		ImportRenameCSV(lastRename);
+		schematic_adder->LoadJsonFile(appdir + "/part_numbers.json");
 	}
-	if (QFile::exists(lastPartList))
+	if (QFile::exists(appdir + "/mapping.json"))
 	{
-		ImportPartNumerCSV(lastPartList);
+		text_replace->LoadJsonFile(appdir + "/mapping.json");
 	}
+
 	if (QFile::exists(lastProject))
 	{
 		SetProject(lastProject);
@@ -104,19 +111,44 @@ void MainWindow::on_actionOpen_Project_triggered()
 	SetProject(project);
 }
 
-void MainWindow::on_actionOpen_Explorer_triggered()
+void MainWindow::on_actionReload_Project_triggered() 
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(ui->leProjectFolder->text()));
+	SetProject(ui->leProject->text());
+}
+
+void MainWindow::on_actionImport_PartList_triggered()
+{
+	QString const partList = QFileDialog::getOpenFileName(this, "Select CSV PartNumbers File", settings->value("last_partnumbers").toString(), tr("CSV Files (*.csv);;All Files (*.*)"));
+	if (!partList.isEmpty())
+	{
+		schematic_adder->ImportPartNumerCSV(partList);
+		settings->setValue("last_partnumbers", partList);
+		settings->sync();
+	}
+}
+
+void MainWindow::on_actionImport_Rename_Map_triggered()
+{
+	QString const rename = QFileDialog::getOpenFileName(this, "Select CSV Rename File", ui->leProjectFolder->text(), tr("CSV Files (*.csv);;All Files (*.*)"));
+	if (!rename.isEmpty())
+	{
+		text_replace->ImportMappingCSV(rename);
+	}
 }
 
 void MainWindow::on_actionOpen_Logs_triggered() 
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(QCoreApplication::applicationDirPath() + "/log/"));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(appdir + "/log/"));
 }
 
 void MainWindow::on_actionClose_triggered() 
 {
 	close();
+}
+
+void MainWindow::on_pbProjectFolder_clicked()
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(ui->leProjectFolder->text()));
 }
 
 void MainWindow::on_pbRename_clicked()
@@ -208,33 +240,22 @@ void MainWindow::on_pbRename_clicked()
 	}
 }
 
-void MainWindow::on_pbFindSchematic_clicked()
-{
-	auto const schematic = QFileDialog::getOpenFileNames(this, "Select Kicad File", ui->leProjectFolder->text(), tr("Kicad Files (*.kicad_pcb *.kicad_sch *.sch);;All Files (*.*)"));
-	if (!schematic.isEmpty())
-	{
-		ui->leSchematic->setText(schematic.join(","));
-	}
-}
-
-void MainWindow::on_pbImportCSV_clicked()
-{
-	QString const rename = QFileDialog::getOpenFileName(this, "Select CSV Rename File", ui->leProjectFolder->text(), tr("CSV Files (*.csv);;All Files (*.*)"));
-	if (!rename.isEmpty())
-	{
-		ImportRenameCSV(rename);
-	}
-}
-
 void MainWindow::on_pbTextReplace_clicked()
 {
-	if(replaceWordsList.empty())
+	if(text_replace->getReplaceList().empty())
 	{
 		LogMessage("Replace List is empty", spdlog::level::level_enum::warn);
 		return;
 	}
 
-	auto files {ui->leSchematic->text().split(",")};
+	QStringList files ;
+
+	for (int i = 0; i < ui->lwFiles->count(); ++i) {
+		auto item = ui->lwFiles->item(i);
+		if (item->checkState()){
+			files.append(ui->leProjectFolder->text() + "/" + item->text());
+		}
+	}
 
 	for(auto const& file : files )
 	{
@@ -243,9 +264,41 @@ void MainWindow::on_pbTextReplace_clicked()
 			LogMessage("File Doesn't Exist", spdlog::level::level_enum::warn);
 			continue;
 		}
-		ReplaceInFile(file, replaceWordsList);
+		ReplaceInFile(file, text_replace->getReplaceList());
 		LogMessage(QString("Updating Text on %1 ").arg(file));
 	}
+}
+
+void MainWindow::on_pbAddMap_clicked()
+{
+	AddMapping pn(this);
+	if (pn.Load())
+	{
+		auto newMap{ pn.GetMapping() };
+		text_replace->AddingMapping(newMap.first, newMap.second);
+	}
+}
+
+void MainWindow::on_pbRemoveMap_clicked()
+{
+	QModelIndexList indexes = ui->lwWords->selectionModel()->selectedIndexes();
+
+	QList<int> rowsList;
+
+	for (int i = 0; i < indexes.count(); i++)
+	{
+		if (!rowsList.contains(indexes.at(i).row()))
+		{
+			rowsList.append(indexes.at(i).row());
+		}
+	}
+
+	std::sort(rowsList.begin(), rowsList.end());
+
+	for (int i = rowsList.count() - 1; i >= 0; i--)
+	{
+		text_replace->RemoveMapping(rowsList.at(i));
+	}	
 }
 
 void MainWindow::on_pbReloadLibraries_clicked()
@@ -266,18 +319,52 @@ void MainWindow::on_pbCheckFP_clicked()
 	library_finder->CheckSchematics();
 }
 
-void MainWindow::on_pbImportParts_clicked()
-{
-	QString const partList = QFileDialog::getOpenFileName(this, "Select CSV PartNumbers File", settings->value("last_partnumbers").toString(), tr("CSV Files (*.csv);;All Files (*.*)"));
-	if (!partList.isEmpty())
-	{
-		ImportPartNumerCSV(partList);
-	}
-}
-
 void MainWindow::on_pbSetPartsInSch_clicked() 
 {
 	schematic_adder->AddPartNumbersToSchematics(ui->leProjectFolder->text());
+}
+
+void MainWindow::on_pbAddPN_clicked()
+{
+	AddPartNumber pn(this);
+	if (pn.Load())
+	{
+		auto newPart{ pn.GetPartInfo() };
+		schematic_adder->AddPart(newPart);
+	}
+}
+
+void MainWindow::on_pbRemovePN_clicked()
+{
+	//ui->twParts
+	QModelIndexList indexes = ui->twParts->selectionModel()->selectedIndexes();
+
+	QList<int> rowsList;
+
+	for (int i = 0; i < indexes.count(); i++)
+	{
+		if (!rowsList.contains(indexes.at(i).row()))
+		{
+			rowsList.append(indexes.at(i).row());
+		}
+	}
+
+	std::sort(rowsList.begin(), rowsList.end());
+
+	for (int i = rowsList.count() - 1; i >= 0; i--)
+	{
+		schematic_adder->RemovePart(rowsList.at(i));
+	}
+}
+
+void MainWindow::on_lwWords_cellDoubleClicked(int row, int column)
+{
+
+}
+
+void MainWindow::on_twParts_cellDoubleClicked(int row, int column)
+{
+
 }
 
 void MainWindow::SetProject(QString const& project)
@@ -297,33 +384,50 @@ void MainWindow::SetProject(QString const& project)
 	auto const& kicadFiles = directory.entryInfoList(QStringList() << "*.kicad_sch" << "*.kicad_pcb", QDir::Files);
 	for(auto const& file: kicadFiles)
 	{
-		auto suf{file.completeSuffix()};
-		if (file.completeSuffix().compare("kicad_pcb") == 0)
-		{
-			//ui->lePCB->setText(directory.absolutePath() + "/" + file);
-			ui->leSchematic->setText(file.absoluteFilePath());
-			break;
-		}
+		ui->lwFiles->addItem(file.fileName());
 	}
 
-	//QStringList const& csvFiles = directory.entryInfoList(QStringList() << "*.csv", QDir::Files);
-	//for (auto const& csv : csvFiles) {
-	//	if (csv.contains("partnumbers") || csv.contains("part_numbers"))
-	//	{
-	//		ui->lePartsCSV->setText(csv);
-	//		ImportPartNumerCSV(directory.absolutePath() + "/" + csv);
-	//	}
-	//	if (csv.contains("map") || csv.contains("rename"))
-	//	{
-	//		ui->leMapCSV->setText(csv);
-	//		ImportRenameCSV(directory.absolutePath() + "/" + csv);
-	//	}
-	//}
+	QListWidgetItem* item = 0;
+	for (int i = 0; i < ui->lwFiles->count(); ++i)
+	{
+		item = ui->lwFiles->item(i);
+		item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+		item->setCheckState(Qt::Unchecked);
+	}
+
 	ClearLibrarys();
 	library_finder->LoadProject(proj.absoluteDir().absolutePath());
 }
 
-void MainWindow::ImportRenameCSV(QString const& csvFile)
+void MainWindow::RedrawPartList(bool save)
+{
+	auto SetItem = [&](int row, int col, QString const& text)
+	{
+		ui->twParts->setItem(row, col, new QTableWidgetItem());
+		ui->twParts->item(row, col)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+		ui->twParts->item(row, col)->setText(text);
+	};
+	ui->twParts->clearContents();
+	ui->twParts->setRowCount(schematic_adder->getPartList().size());
+	int row{ 0 };
+
+	for (auto const& line : schematic_adder->getPartList())
+	{
+		SetItem(row, 0, line.value);
+		SetItem(row, 1, line.footPrint);
+		SetItem(row, 2, line.digikey);
+		SetItem(row, 3, line.lcsc);
+		SetItem(row, 4, line.mpn);
+		++row;
+	}
+	ui->twParts->resizeColumnsToContents();
+	if (save)
+	{
+		schematic_adder->SaveJsonFile(appdir + "/part_numbers.json");
+	}	
+}
+
+void MainWindow::RedrawMappingList(bool save)
 {
 	auto SetImportItem = [&](int row, int col, QString const& text)
 	{
@@ -333,118 +437,23 @@ void MainWindow::ImportRenameCSV(QString const& csvFile)
 	};
 	ui->lwWords->clearContents();
 	ui->lwWords->clear();
-	replaceWordsList.clear();
-	ui->leMapCSV->setText(csvFile);
-	settings->setValue("last_rename", csvFile);
-	settings->sync();
 
-	auto lines{ csvparser::parsefile(csvFile.toStdString()) };
-
-	ui->lwWords->setRowCount(lines.size());
+	ui->lwWords->setRowCount(text_replace->getReplaceList().size());
 
 	int rowIdx{ 0 };
-	for (auto const& row : lines)
+	for (auto const& [from, to] : text_replace->getReplaceList())
 	{
-		if (row.size() > 1)
-		{
-			SetImportItem(rowIdx, 0, kicad_utils::CleanQuotes(row[0].c_str()));
-			SetImportItem(rowIdx, 1, kicad_utils::CleanQuotes(row[1].c_str()));
-			replaceWordsList.emplace_back(row[0].c_str(), row[1].c_str());
-			++rowIdx;
-		}
+		SetImportItem(rowIdx, 0, from);
+		SetImportItem(rowIdx, 1, to);
+		++rowIdx;
 	}
 
 	ui->lwWords->resizeColumnsToContents();
-}
 
-void MainWindow::ImportPartNumerCSV(QString const& csvFile)
-{
-	auto SetItem = [&](int row, int col, QString const& text)
+	if (save)
 	{
-		ui->twParts->setItem(row, col, new QTableWidgetItem());
-		ui->twParts->item(row, col)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-		ui->twParts->item(row, col)->setText(text);
-	};
-	ui->twParts->clearContents();
-	ui->lePartsCSV->setText(csvFile);
-
-	schematic_adder->ClearPartList();
-
-	settings->setValue("last_partnumbers", csvFile);
-	settings->sync();
-
-	auto lines{ csvparser::parsefile(csvFile.toStdString()) };
-
-	ui->twParts->setRowCount(lines.size());
-	int row{ 0 };
-
-	int valuCol{ 0 };
-	int fpCol{ 1 };
-	int lcscCol{ 3 };
-	bool lcscBOM{ false };
-	for (auto const& line : lines)
-	{
-		if (line.size() < 3)
-		{
-			continue;
-		}
-		QString lcsc;
-		QString mpn;
-		QString digi;
-		if (line.size() > 3)
-		{
-			lcsc = line[3].c_str();
-			lcsc = kicad_utils::CleanQuotes(lcsc);
-			SetItem(row, 3, lcsc);
-		}
-		if (line.size() > 4)
-		{
-			mpn = line[4].c_str();
-			mpn = kicad_utils::CleanQuotes(mpn);
-			SetItem(row, 4, mpn);
-		}
-
-		if(line[2] == "LCSC Part")//Kicad Tools File over Kicad BOM export
-		{
-			valuCol = 1;
-			fpCol = 0;
-			lcscCol = 3;
-			lcscBOM = true;
-			continue;
-		}
-
-		QString value = line[valuCol].c_str();
-		value = kicad_utils::CleanQuotes(value);
-
-		if (value == "Value")
-		{
-			continue;
-		}
-
-		if(!lcscBOM)
-		{
-			digi = line[2].c_str();
-			digi = kicad_utils::CleanQuotes(digi);
-			SetItem(row, 2, digi);
-		}
-		else
-		{
-			lcsc = line[2].c_str();
-			lcsc = kicad_utils::CleanQuotes(lcsc);
-			SetItem(row, 3, lcsc);
-		}
-
-		QString footp = line[fpCol].c_str();
-		footp = kicad_utils::CleanQuotes(footp);
-		
-		SetItem(row, 0, value);
-		SetItem(row, 1, footp);
-
-		schematic_adder->AddPart(std::move(value),std::move( footp), std::move( digi), std::move(lcsc), std::move(mpn));
-
-		++row;
+		text_replace->SaveJsonFile(appdir + "/mapping.json");
 	}
-	ui->twParts->resizeColumnsToContents();
 }
 
 void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QString, QString>> const& replaceList)
@@ -458,7 +467,6 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QS
 			return;
 		}
 		QTextStream in(&f);
-		
 
 		while (!in.atEnd())
 		{
@@ -478,9 +486,7 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<std::pair<QS
 			auto newline = line;
 			for (auto const& [Item1, Item2] : replaceList)
 			{
-
 				newline.replace(QRegularExpression(Item1), Item2);
-				
 			}
 			if(newline != line)
 			{
@@ -527,26 +533,24 @@ void MainWindow::CopyRecursive(const std::filesystem::path& src, const std::file
 
 void MainWindow::MoveRecursive(const std::filesystem::path& src, const std::filesystem::path& target,  bool createRoot)
 {
-	namespace fs = std::filesystem;
 	LogMessage(QString("Moving %1 : %2").arg(src.string().c_str()).arg(src.string().c_str()));
 	if (createRoot)
 	{
-		fs::create_directory(target);
+		std::filesystem::create_directory(target);
 	}
 
-	for (fs::path p : fs::directory_iterator(src))
+	for (std::filesystem::path p : std::filesystem::directory_iterator(src))
 	{
-		fs::path destFile = target / p.filename();
+		std::filesystem::path destFile = target / p.filename();
 
-		if (fs::is_directory(p)) {
-			fs::create_directory(destFile);
+		if (std::filesystem::is_directory(p)) 
+		{
+			std::filesystem::create_directory(destFile);
 			MoveRecursive(p, destFile, false);
 		}
-		else 
-		
+		else		
 		{
-			fs::rename(p, destFile);
-
+			std::filesystem::rename(p, destFile);
 		}
 	}
 }
@@ -622,5 +626,4 @@ void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum ll
 	ui->lwLogs->scrollToBottom();
 
 	qApp->processEvents();
-
 }

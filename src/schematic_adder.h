@@ -17,18 +17,25 @@ public:
     ~SchematicAdder() {}
 
 	bool AddPartNumbersToSchematics(QString const& schDir) const;
-	void AddPart(QString value, QString footPrint,  QString digikey, QString lcsc, QString mpn );
-
+	void AddPart(PartInfo part );
+	void RemovePart(int index);
+	void LoadJsonFile(const QString& jsonFile);
+	void SaveJsonFile(const QString& jsonFile);
+	void ImportPartNumerCSV(QString const& csvFile);
 	void ClearPartList(){ partList.clear(); }
+
+	std::vector<PartInfo> const& getPartList() const { return partList; }
 
 Q_SIGNALS:
 	void SendMessage( QString const& message, spdlog::level::level_enum llvl) const;
+	void RedrawPartList( bool save) const;
 
 private:
 	std::vector<PartInfo> partList;
 
 	void UpdateSchematic(QString const& schPath) const;
-
+	void write(QJsonObject& json) const;
+	void read(QJsonObject const& json);
 };
 
 #endif

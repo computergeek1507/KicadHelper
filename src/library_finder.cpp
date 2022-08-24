@@ -315,12 +315,12 @@ QString LibraryFinder::getGlobalFootprintsPath() const
 #if defined( Q_OS_DARWIN )
     return R"(kicad.app/Contents/SharedSupport/footprints)";
 #elif defined( Q_OS_WIN )
-#ifdef _DEBUG
+//#ifdef _DEBUG
     return R"(C:/Program Files/KiCad/6.0/share/kicad/footprints/)";
-#else
-    QFileInfo root( QCoreApplication::applicationDirPath() +  ( "../share/kicad/footprints/" ) );
-    return root.absoluteFilePath();
-#endif
+//#else
+//    QFileInfo root( QCoreApplication::applicationDirPath() +  ( "../share/kicad/footprints/" ) );
+//    return root.absoluteFilePath();
+//#endif
 #else
     return R"(/usr/share/kicad/footprints/)" ;
 #endif
@@ -331,12 +331,12 @@ QString LibraryFinder::getGlobalFootprintTablePath() const
 #if defined( Q_OS_DARWIN )
     return R"(kicad.app/Contents/SharedSupport/template/fp-lib-table)";
 #elif defined( Q_OS_WIN )
-#ifdef _DEBUG
+//#ifdef _DEBUG
     return R"(C:/Program Files/KiCad/6.0/share/kicad/template/fp-lib-table)";
-#else
-    QFileInfo root( QCoreApplication::applicationDirPath() +  ( "../share/kicad/template/fp-lib-table" ) );
-    return root.absoluteFilePath();
-#endif
+//#else
+//    QFileInfo root( QCoreApplication::applicationDirPath() +  ( "../share/kicad/template/fp-lib-table" ) );
+//    return root.absoluteFilePath();
+//#endif
 #else
     return R"(/usr/share/kicad/template/fp-lib-table)" ;
 #endif
@@ -410,7 +410,7 @@ bool LibraryFinder::FixFootPrints(QString const& folder)
         Three Steps of "fixing" footprints
         1) Convert absolute paths to relative paths in Footprint Table
         2) Find librarys in library folder and add Footprint Table
-        3) IDK three sounded good 
+        3) IDK 
     */
     if (missingfootprintList.empty())
     {

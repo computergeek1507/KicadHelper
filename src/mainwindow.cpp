@@ -871,8 +871,8 @@ void MainWindow::ProcessCommandLine()
             "Check Schematic FootPrints.");
     parser.addOption(checkOption);
 
-	QCommandLineOption fixOption(QStringList() << "f" << "fix",
-		"Attempt to Fix Schematic FootPrints.");
+	QCommandLineOption fixOption(QStringList() << "f" << "find",
+		"Attempt to Find Schematic FootPrints.");
 	parser.addOption(fixOption);
 
 	QCommandLineOption replaceOption(QStringList() << "r" << "replace",

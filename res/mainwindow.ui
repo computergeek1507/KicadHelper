@@ -96,7 +96,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tabPartNumber">
        <attribute name="title">
@@ -108,11 +108,11 @@
           <property name="columnCount">
            <number>5</number>
           </property>
-          <attribute name="verticalHeaderMinimumSectionSize">
-           <number>25</number>
-          </attribute>
           <attribute name="verticalHeaderDefaultSectionSize">
            <number>30</number>
+          </attribute>
+          <attribute name="verticalHeaderMinimumSectionSize">
+           <number>25</number>
           </attribute>
           <column>
            <property name="text">
@@ -204,11 +204,11 @@
               <attribute name="horizontalHeaderStretchLastSection">
                <bool>true</bool>
               </attribute>
-              <attribute name="verticalHeaderMinimumSectionSize">
-               <number>20</number>
-              </attribute>
               <attribute name="verticalHeaderDefaultSectionSize">
                <number>30</number>
+              </attribute>
+              <attribute name="verticalHeaderMinimumSectionSize">
+               <number>20</number>
               </attribute>
               <column>
                <property name="text">
@@ -242,11 +242,11 @@
               <attribute name="horizontalHeaderStretchLastSection">
                <bool>true</bool>
               </attribute>
-              <attribute name="verticalHeaderMinimumSectionSize">
-               <number>20</number>
-              </attribute>
               <attribute name="verticalHeaderDefaultSectionSize">
                <number>30</number>
+              </attribute>
+              <attribute name="verticalHeaderMinimumSectionSize">
+               <number>20</number>
               </attribute>
               <column>
                <property name="text">
@@ -323,11 +323,11 @@
         </item>
         <item>
          <widget class="QTableWidget" name="lwWords">
-          <attribute name="verticalHeaderMinimumSectionSize">
-           <number>20</number>
-          </attribute>
           <attribute name="verticalHeaderDefaultSectionSize">
            <number>25</number>
+          </attribute>
+          <attribute name="verticalHeaderMinimumSectionSize">
+           <number>20</number>
           </attribute>
           <column>
            <property name="text">

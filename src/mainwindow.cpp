@@ -20,6 +20,7 @@
 #include <QSettings>
 #include <QFileDialog>
 #include <QTextStream>
+#include <QListWidgetItem>
 #include <QThread>
 #include <QInputDialog>
 #include <QCommandLineParser>
@@ -58,8 +59,6 @@ MainWindow::MainWindow(QWidget *parent)
 		logger->flush_on(spdlog::level::debug);
 		logger->set_level(spdlog::level::debug);
 		logger->set_pattern("[%D %H:%M:%S] [%L] %v");
-
-		//spdlog::logger logger("multi_sink", { console_sink, file_sink });
 	}
 	catch (std::exception& /*ex*/)
 	{
@@ -490,6 +489,15 @@ void MainWindow::on_twParts_cellDoubleClicked(int row, int column)
 	}
 }
 
+void MainWindow::on_lwFiles_itemDoubleClicked( QListWidgetItem * item)
+{
+	if(nullptr == item)
+	{
+		return;
+	}
+	QDesktopServices::openUrl(QUrl::fromLocalFile(ui->leProjectFolder->text() + "/" + item->text()));
+}
+
 void MainWindow::SetProject(QString const& project)
 {
 	ui->leProject->setText(project);
@@ -504,7 +512,8 @@ void MainWindow::SetProject(QString const& project)
 	ui->leNewName->setText(proj.baseName());
 
 	QDir directory(proj.absoluteDir().absolutePath());
-	auto const& kicadFiles = directory.entryInfoList(QStringList() << "*.kicad_sch" << "*.kicad_pcb", QDir::Files);
+	auto const& kicadFiles = directory.entryInfoList(QStringList() << "*.kicad_sch" << "*.kicad_pcb" << "*table*", QDir::Files);
+	//auto const& kicadFiles = directory.entryInfoList(QStringList() << "*", QDir::Files);
 	
 	ui->lwFiles->clear();
 	for(auto const& file: kicadFiles)

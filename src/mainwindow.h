@@ -14,6 +14,7 @@
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 
+class QListWidgetItem;
 class QSettings;
 QT_END_NAMESPACE
 
@@ -69,6 +70,8 @@ public Q_SLOTS:
 
     void on_lwWords_cellDoubleClicked(int row, int column);
     void on_twParts_cellDoubleClicked(int row, int column);
+
+    void on_lwFiles_itemDoubleClicked( QListWidgetItem * item);
 
     void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 

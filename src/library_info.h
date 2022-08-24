@@ -6,13 +6,12 @@ struct LibraryInfo
 {
 	LibraryInfo() = default;
 
-	LibraryInfo(QString name_, QString type_, QString url_, QString options_, QString descr_, QString level_) :
+	LibraryInfo(QString name_, QString type_, QString url_, QString options_, QString descr_) :
 		name(std::move(name_)),
 		type(std::move(type_)),
 		url(std::move(url_)),
 		options(std::move(options_)),
-		descr(std::move(descr_)),
-		level(std::move(level_))
+		descr(std::move(descr_))
 	{
 	}
 
@@ -26,5 +25,4 @@ struct LibraryInfo
 	QString url;
 	QString options;
 	QString descr;
-	QString level;
 };

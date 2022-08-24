@@ -73,10 +73,11 @@ public Q_SLOTS:
     void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 
     void AddLibrary(QString const& level, QString const& name, QString const& type, QString const& path);
-
+    void ClearLibrary(QString const& level);
     void ClearLibrarys();
 
     void AddFootPrintMsg( QString const& message, bool error);
+    void ClearFootPrintMsgs();
 
     void RedrawPartList(bool save);
     void RedrawMappingList(bool save);

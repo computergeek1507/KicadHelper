@@ -8,6 +8,9 @@
 #include <QObject>
 #include <QMap>
 
+constexpr const char* PROJECT_LIB = "Project";
+constexpr const char* SYSTEM_LIB = "System";
+
 class LibraryFinder : public QObject
 {
 Q_OBJECT
@@ -25,11 +28,13 @@ Q_SIGNALS:
 
 	void AddLibrary( QString const& level, QString const& name, QString const& type, QString const& path) const;
 
+	void ClearLibrary( QString const& level) const;
+
 	void SendResult( QString const& message, bool error) const;
+	void ClearResults() const;
 
 private:
 
-	QString m_projectFolder;
 
 	QString getGlobalFootprintsPath() const;
 	QString getGlobalFootprintTablePath() const;
@@ -52,9 +57,18 @@ private:
 
 	QStringList GetKicadFootPrints(QString const& url) const;
 
-	void ConvertToRelativePath(QString const& path, QString const& folder);
+	bool AttemptToFindFootPrintPath(QString const& footprint, QString const& libraryPath );
+	bool ConvertAllPathsToRelative(QString const& libraryPath);
 
-	std::vector<LibraryInfo> libraryList;
+	QString FindRecurseDirectory(const QString& startDir, const QString& dirName) const;
+	QString FindRecurseFile(const QString& startDir, const QStringList& fileName) const;
+
+	QString ConvertToRelativePath(QString const& ogpath, QString const& libraryPath);
+
+	void AddLibraryPath(QString name, QString type, QString url, QString const& level);
+	
+	QString m_projectFolder;
+	QMap<QString,std::vector<LibraryInfo>> libraryList;
 
 	QMap<QString,QStringList> footprintList;
 

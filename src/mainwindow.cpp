@@ -76,7 +76,9 @@ MainWindow::MainWindow(QWidget *parent)
 	library_finder = std::make_unique<LibraryFinder>();
 	connect( library_finder.get(), &LibraryFinder::SendMessage, this, &MainWindow::LogMessage );
 	connect( library_finder.get(), &LibraryFinder::AddLibrary, this, &MainWindow::AddLibrary );
+	connect( library_finder.get(), &LibraryFinder::ClearLibrary, this, &MainWindow::ClearLibrary );
 	connect( library_finder.get(), &LibraryFinder::SendResult, this, &MainWindow::AddFootPrintMsg );
+	connect( library_finder.get(), &LibraryFinder::ClearResults, this, &MainWindow::ClearFootPrintMsgs );
 
 	schematic_adder = std::make_unique<SchematicAdder>();
 	connect( schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
@@ -388,7 +390,7 @@ void MainWindow::on_pbRemoveMap_clicked()
 void MainWindow::on_pbReloadLibraries_clicked()
 {
 	QDir directory(ui->leProjectFolder->text());
-	if (!directory.exists())
+	if (!directory.exists() || ui->leProjectFolder->text().isEmpty())
 	{
 		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
 		return;
@@ -399,12 +401,18 @@ void MainWindow::on_pbReloadLibraries_clicked()
 
 void MainWindow::on_pbCheckFP_clicked()
 {
-	ui->lwResults->clear();
+	ClearFootPrintMsgs();
 	library_finder->CheckSchematics();
 }
 
 void MainWindow::on_pbFixFP_clicked()
 {
+	QDir directory(ui->leLibraryFolder->text());
+	if (!directory.exists()|| ui->leLibraryFolder->text().isEmpty())
+	{
+		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
+		return;
+	}
 	library_finder->FixFootPrints(ui->leLibraryFolder->text());
 }
 
@@ -691,30 +699,70 @@ void MainWindow::MoveRecursive(const std::filesystem::path& src, const std::file
 
 void MainWindow::AddLibrary( QString const& level, QString const& name, QString const& type, QString const& path)
 {
+	QTableWidget* libraryList{nullptr};
+	if(PROJECT_LIB==level)
+	{
+		libraryList = ui->twProjectLibraries;
+		
+		
+	}else if(SYSTEM_LIB==level)
+	{
+		libraryList = ui->twGlobalLibraries;
+	}
+	else
+	{
+		return;
+	}
 	auto SetItem = [&](int row, int col, QString const& text)
 	{
-		ui->twLibraries->setItem(row, col, new QTableWidgetItem());
-		ui->twLibraries->item(row, col)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-		ui->twLibraries->item(row, col)->setText(text);
+		libraryList->setItem(row, col, new QTableWidgetItem());
+		libraryList->item(row, col)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+		libraryList->item(row, col)->setText(text);
 	};
 
-	int row = ui->twLibraries->rowCount();
-	ui->twLibraries->insertRow(row);
+	int row = libraryList->rowCount();
+	libraryList->insertRow(row);
 
-	SetItem(row, 0, level);
-	SetItem(row, 1, name);
-	SetItem(row, 2, type);
-	SetItem(row, 3, path);
+	SetItem(row, 0, name);
+	SetItem(row, 1, type);
+	SetItem(row, 2, path);
 
-	ui->twLibraries->resizeColumnsToContents();
+	libraryList->resizeColumnsToContents();
+}
+
+void MainWindow::ClearLibrary(QString const& level)
+{
+	if(PROJECT_LIB==level)
+	{
+		ui->twProjectLibraries->clearContents();
+		while( ui->twProjectLibraries->rowCount() != 0 )
+		{
+			ui->twProjectLibraries->removeRow(0);
+		}
+		
+	}
+	if(SYSTEM_LIB==level)
+	{
+		ui->twGlobalLibraries->clearContents();
+		while( ui->twGlobalLibraries->rowCount() != 0 )
+		{
+			ui->twGlobalLibraries->removeRow(0);
+		}
+	}
 }
 
 void MainWindow::ClearLibrarys()
 {
-	ui->twLibraries->clearContents();
-	while( ui->twLibraries->rowCount() != 0 )
+	ui->twGlobalLibraries->clearContents();
+	while( ui->twGlobalLibraries->rowCount() != 0 )
 	{
-		ui->twLibraries->removeRow(0);
+		ui->twGlobalLibraries->removeRow(0);
+	}
+
+	ui->twProjectLibraries->clearContents();
+	while( ui->twProjectLibraries->rowCount() != 0 )
+	{
+		ui->twProjectLibraries->removeRow(0);
 	}
 }
 
@@ -732,6 +780,11 @@ void MainWindow::AddFootPrintMsg( QString const& message, bool error)
 	}
 	ui->lwResults->addItem(it);
 	ui->lwResults->scrollToBottom();
+}
+
+void MainWindow::ClearFootPrintMsgs()
+{
+	ui->lwResults->clear();
 }
 
 void MainWindow::SaveFootPrintReport(QString const& fileName)

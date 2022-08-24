@@ -1,2 +1,6 @@
-${KISYS3DMOD},${KICAD6_3DMODEL_DIR}
-Diodes_SMD,Diode_SMD
+"${KISYS3DMOD}","${KICAD6_3DMODEL_DIR}"
+"Diodes_SMD","Diode_SMD"
+"R_0603_1608Metric_Pad1.05x0.95mm_HandSolder","R_0603_1608Metric_Pad0.98x0.95mm_HandSolder"
+"C_0805_2012Metric_Pad1.15x1.40mm_HandSolder","C_0805_2012Metric_Pad1.18x1.45mm_HandSolder"
+"LED_0603_1608Metric_Castellated","LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
+"R_0805_2012Metric_Pad1.15x1.40mm_HandSolder","R_0805_2012Metric_Pad1.20x1.40mm_HandSolder"

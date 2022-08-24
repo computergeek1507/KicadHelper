@@ -2,6 +2,7 @@
 #define SCHEMATIC_ADDER_H
 
 #include "partinfo.h"
+#include "bom_item.h"
 
 #include "spdlog/spdlog.h"
 
@@ -21,14 +22,16 @@ public:
 	void RemovePart(int index);
 	void UpdatePart(QString const& value, QString const& fp, QString const& digi, QString const& lcsc, QString const& mpn, int index);
 
+	//Import/Export Stuff
 	void LoadJsonFile(const QString& jsonFile);
 	void SaveJsonFile(const QString& jsonFile) const;
 	void ImportPartNumerCSV(QString const& csvFile, bool overideParts);
 	void ImportSchematicParts(QStringList const& schFiles, bool overideParts);
 	void SavePartNumerCSV(QString const& fileName) const;
 
-	void ClearPartList(){ partList.clear(); }
+	void GenerateBOM(QString const& fileName, QString const& schDir);
 
+	void ClearPartList(){ partList.clear(); }
 	std::vector<PartInfo> const& getPartList() const { return partList; }
 
 Q_SIGNALS:
@@ -38,6 +41,7 @@ Q_SIGNALS:
 
 private:
 	std::vector<PartInfo> partList;
+	std::vector<BOMItem> bomList;
 
 	QRegularExpression propRx;
 	QRegularExpression pinRx;
@@ -45,6 +49,12 @@ private:
 	void UpdateSchematic(QString const& schPath) const;
 	void write(QJsonObject& json) const;
 	void read(QJsonObject const& json);
+
+	//BOM Stuff
+	void ParseForBOM(QString const& fileName);
+	void AddorUpdateBOM(QString value_, QString footPrint_, QString const& ref_, QString digikey_, QString lcsc_, QString mpn_);
+	void SaveBOM(QString const& fileName);
+
 };
 
 #endif

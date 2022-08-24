@@ -1,0 +1,28 @@
+{
+    "mappings": [
+        {
+            "from": "${KISYS3DMOD}",
+            "to": "${KICAD6_3DMODEL_DIR}"
+        },
+        {
+            "from": "Diodes_SMD",
+            "to": "Diode_SMD"
+        },
+        {
+            "from": "R_0603_1608Metric_Pad1.05x0.95mm_HandSolder",
+            "to": "R_0603_1608Metric_Pad0.98x0.95mm_HandSolder"
+        },
+        {
+            "from": "C_0805_2012Metric_Pad1.15x1.40mm_HandSolder",
+            "to": "C_0805_2012Metric_Pad1.18x1.45mm_HandSolder"
+        },
+        {
+            "from": "LED_0603_1608Metric_Castellated",
+            "to": "LED_0603_1608Metric_Pad1.05x0.95mm_HandSolder"
+        },
+        {
+            "from": "R_0805_2012Metric_Pad1.15x1.40mm_HandSolder",
+            "to": "R_0805_2012Metric_Pad1.20x1.40mm_HandSolder"
+        }
+    ]
+}

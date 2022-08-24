@@ -9,7 +9,7 @@
 #include <QMap>
 
 constexpr const char* PROJECT_LIB = "Project";
-constexpr const char* SYSTEM_LIB = "System";
+constexpr const char* GLOBAL_LIB = "Global";
 
 class LibraryFinder : public QObject
 {

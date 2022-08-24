@@ -44,6 +44,8 @@ public Q_SLOTS:
 
     void on_actionExport_Rename_CSV_triggered();
     void on_actionExport_PartList_CSV_triggered();
+    void on_actionLibrary_Report_triggered();
+    void on_actionBOM_CSV_triggered();
 
     void on_actionClose_triggered();
 
@@ -103,6 +105,8 @@ private:
 
     QString appdir;
     QString helpText;
+
+    QStringList libraryReport;
 
     void SetProject(QString const& project);
     void SetLibrary(QString const& library);

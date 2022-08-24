@@ -35,7 +35,7 @@ void LibraryFinder::getStockLibraries()
 {
     if(QFile::exists(getGlobalFootprintTablePath()))
     {
-        ParseLibraries(getGlobalFootprintTablePath(), SYSTEM_LIB);
+        ParseLibraries(getGlobalFootprintTablePath(), GLOBAL_LIB);
     }
     else
     {
@@ -535,7 +535,7 @@ QString LibraryFinder::ConvertToRelativePath(QString const& ogpath, QString cons
     auto startLibrary{libraryPath};
 
     QString startLibRelative{QString(PROJ_FOLDER.data()) + "/"};//list of slashes going up the folder structure
-    QString folders;                        //list of folders going down the folder structure
+    QString folders;                        //list of folders  going down the folder structure
 
     bool worked{false};
     for(int i = 0; i < 255; ++i)//avoid infinite loops

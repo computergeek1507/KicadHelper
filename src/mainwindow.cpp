@@ -163,7 +163,7 @@ void MainWindow::on_actionImport_PartList_triggered()
 
 void MainWindow::on_actionImport_Parts_from_Schematic_triggered()
 {
-	QStringList const schList = QFileDialog::getOpenFileNames(this, "Select Kicad Schematic Files",settings->value("last_project").toString(), tr("Kicad Schematic Files (*.kicad_sch);;All Files (*.*)"));
+	QStringList const schList = QFileDialog::getOpenFileNames(this, "Select Kicad Schematic Files",ui->leProjectFolder->text(), tr("Kicad Schematic Files (*.kicad_sch);;All Files (*.*)"));
 	if (!schList.isEmpty())
 	{
 		schematic_adder->ImportSchematicParts(schList,ui->actionOverride->isChecked());
@@ -205,6 +205,32 @@ void MainWindow::on_actionExport_PartList_CSV_triggered()
 		{
 			schematic_adder->SavePartNumerCSV(partList);
 		}
+	}
+}
+
+void MainWindow::on_actionLibrary_Report_triggered()
+{
+	QString const reportFile = QFileDialog::getSaveFileName(this, "Save Report File", ui->leProjectFolder->text()+ "/report.txt", tr("txt Files (*.txt);;All Files (*.*)"));
+	if (!reportFile.isEmpty())
+	{
+		SaveFootPrintReport(reportFile);
+	}
+}
+
+void MainWindow::on_actionBOM_CSV_triggered()
+{
+	QFileInfo proj(ui->leProject->text());
+	QString bomFile = proj.absoluteFilePath();
+	bomFile = bomFile.replace("." + proj.suffix(),"_BOM.csv");
+
+	bomFile = QFileDialog::getSaveFileName(this,
+			"Save BOM CSV File",
+			bomFile,
+			tr("csv Files (*.csv);;All Files (*.*)"));
+
+	if (!bomFile.isEmpty())
+	{
+		schematic_adder->GenerateBOM(bomFile,ui->leProjectFolder->text());
 	}
 }
 
@@ -500,6 +526,7 @@ void MainWindow::on_lwFiles_itemDoubleClicked( QListWidgetItem * item)
 
 void MainWindow::SetProject(QString const& project)
 {
+	libraryReport.clear();
 	ui->leProject->setText(project);
 	settings->setValue("last_project", project);
 	settings->sync();
@@ -714,7 +741,7 @@ void MainWindow::AddLibrary( QString const& level, QString const& name, QString 
 		libraryList = ui->twProjectLibraries;
 		
 		
-	}else if(SYSTEM_LIB==level)
+	}else if(GLOBAL_LIB==level)
 	{
 		libraryList = ui->twGlobalLibraries;
 	}
@@ -750,7 +777,7 @@ void MainWindow::ClearLibrary(QString const& level)
 		}
 		
 	}
-	if(SYSTEM_LIB==level)
+	if(GLOBAL_LIB==level)
 	{
 		ui->twGlobalLibraries->clearContents();
 		while( ui->twGlobalLibraries->rowCount() != 0 )
@@ -777,6 +804,7 @@ void MainWindow::ClearLibrarys()
 
 void MainWindow::AddFootPrintMsg( QString const& message, bool error)
 {
+	libraryReport.append(message);
 	QListWidgetItem* it = new QListWidgetItem(message);
 	if(error)
 	{
@@ -805,9 +833,9 @@ void MainWindow::SaveFootPrintReport(QString const& fileName)
 		return;
 	}
 	QTextStream out(&outFile);
-	for (int i = 0; i< ui->lwResults->count(); ++i)
+	for (auto const& line : libraryReport)
 	{
-		out << ui->lwResults->item(i)->text() << "\n";
+		out << line << "\n";
 	}	
 	outFile.close();
 	LogMessage(QString("Saved Report to '%1'").arg(outFile.fileName()));
@@ -856,16 +884,20 @@ void MainWindow::ProcessCommandLine()
             "mapping");
     parser.addOption(mappingOption);
 
-    QCommandLineOption partlistOption(QStringList() << "l" << "partlist",
+    QCommandLineOption partlistOption(QStringList() << "t" << "partlist",
              "Part Number List JSON to Load.",
             "partlist");
     parser.addOption(partlistOption);
 
-	QCommandLineOption libraryOption(QStringList() << "b" << "library",
+	QCommandLineOption libraryOption(QStringList() << "l" << "library",
 		"Set Library Folder.",
 		"library");
-
 	parser.addOption(libraryOption);
+
+	QCommandLineOption bomOption(QStringList() << "b" << "bom",
+		"Export to CSV BOM.",
+		"bom");
+	parser.addOption(bomOption);
 
 	QCommandLineOption reportOption(QStringList() << "o" << "report",
              "Save Check Schematic FootPrints Report.",
@@ -922,6 +954,7 @@ void MainWindow::ProcessCommandLine()
 	{
 		SetLibrary(parser.value(libraryOption));
 	}
+
 	else if (QDir(settings->value("last_library").toString()).exists())
 	{
 		SetLibrary(settings->value("last_library").toString());
@@ -954,6 +987,11 @@ void MainWindow::ProcessCommandLine()
 	if (parser.isSet(fixOption))
 	{
 		on_pbFixFP_clicked();
+	}
+
+	if (!parser.value(bomOption).isEmpty())
+	{
+		schematic_adder->GenerateBOM(parser.value(bomOption),ui->leProjectFolder->text());
 	}
 
 	if(!parser.value(reportOption).isEmpty())

@@ -18,6 +18,7 @@ public:
 
 	void LoadProject(QString const& folder);
 	bool CheckSchematics();
+	bool FixFootPrints(QString const& folder);
 
 Q_SIGNALS:
 	void SendMessage( QString const& message,  spdlog::level::level_enum llvl) const;
@@ -33,6 +34,7 @@ private:
 	QString getGlobalFootprintsPath() const;
 	QString getGlobalFootprintTablePath() const;
 	void ParseLibraries(QString const& path, QString const& level);
+	void SaveLibraryTable(QString const& fileName);
 
 	QString updatePath(QString path) const;
 	QString getLibParamter(QString const& parm, QString const& line) const;
@@ -42,7 +44,7 @@ private:
 	void getProjectLibraries();
 	void getStockLibraries();
 
-	void CheckSchematic(QString const& schPath) const;
+	void CheckSchematic(QString const& schPath);
 	void CreateFootprintList();
 
 	bool HasFootPrint(QString const& footprint) const;
@@ -50,9 +52,13 @@ private:
 
 	QStringList GetKicadFootPrints(QString const& url) const;
 
+	void ConvertToRelativePath(QString const& path, QString const& folder);
+
 	std::vector<LibraryInfo> libraryList;
 
 	QMap<QString,QStringList> footprintList;
+
+	QStringList missingfootprintList;
 };
 
 #endif

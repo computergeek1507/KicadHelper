@@ -57,13 +57,39 @@ void LibraryFinder::ParseLibraries(QString const& path, QString const& level)
         QString name = getLibParamter("name", line);
         QString type = getLibParamter("type", line);
         QString uri = getLibParamter("uri", line);
+        QString options = getLibParamter("options", line);
+        QString descr = getLibParamter("descr", line);
         if(!name.isEmpty() && !type.isEmpty() && !uri.isEmpty() )
         {
             emit AddLibrary(level, name, type , uri);
-            libraryList.emplace_back(name, type , uri);
+            libraryList.emplace_back(name, type , uri, options, descr, level);
         }
 	}
 	inFile.close();
+}
+
+void LibraryFinder::SaveLibraryTable(QString const& fileName)
+{
+    QFile outFile(fileName);
+    if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+        return;
+    }
+    QTextStream out(&outFile);
+
+    out << "(fp_lib_table\n";
+    for (auto const& library : libraryList)
+    {
+        if (library.level != "Project")
+        {
+            continue;
+        }
+        out << library.asString() << "\n";
+    }
+    out << ")\n";
+    outFile.close();
+    emit SendMessage(QString("Saved Library Table to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug);
 }
 
 bool LibraryFinder::CheckSchematics()
@@ -83,6 +109,8 @@ bool LibraryFinder::CheckSchematics()
 		return false;
 	}
 
+    missingfootprintList.clear();
+
     auto const& kicadFiles {directory.entryInfoList(QStringList() << "*.kicad_sch" , QDir::Files)};
 	for (auto const& file : kicadFiles)
 	{
@@ -92,7 +120,7 @@ bool LibraryFinder::CheckSchematics()
 	return true;
 }
 
-void LibraryFinder::CheckSchematic(QString const& schPath) const
+void LibraryFinder::CheckSchematic(QString const& schPath)
 {
     QFileInfo fileData(schPath);
     QFile inFile(schPath);
@@ -135,6 +163,10 @@ void LibraryFinder::CheckSchematic(QString const& schPath) const
         } 
         if(!HasFootPrint(footprint))
         {
+            if (missingfootprintList.contains(footprint))
+            {
+                missingfootprintList.append(footprint);
+            }
             emit SendResult(QString("'%1':'%2' was not found in '%3'").arg(reference).arg(footprint).arg(fileData.fileName()),true);
             errorFound = true;
         }
@@ -368,4 +400,25 @@ QString LibraryFinder::getSchReference(QString const& line ) const
   
     value = kicad_utils::CleanQuotes(value);
     return value;
+}
+
+bool LibraryFinder::FixFootPrints(QString const& folder) 
+{
+    if (missingfootprintList.empty())
+    {
+        CheckSchematics();
+    }
+    for (auto const& footprint : missingfootprintList)
+    {
+
+    }
+    return true;
+}
+
+void LibraryFinder::ConvertToRelativePath(QString const& path, QString const& folder)
+{
+    if (path.startsWith(folder))
+    {
+        
+    }
 }

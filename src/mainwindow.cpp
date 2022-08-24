@@ -104,16 +104,24 @@ void MainWindow::on_actionOpen_Project_triggered()
 {
 	//Kicad files (*.pro;*.kicad_pro)|*.pro;*.kicad_pro|All Files|*.*
 	QString const project = QFileDialog::getOpenFileName(this, "Select Kicad File", settings->value("last_project").toString(), tr("Kicad Files (*.kicad_pro *.pro);;All Files (*.*)"));
-	if (project.isEmpty())
+	if (!project.isEmpty())
 	{
-		return;
+		SetProject(project);
 	}
-	SetProject(project);
 }
 
 void MainWindow::on_actionReload_Project_triggered()
 {
 	SetProject(ui->leProject->text());
+}
+
+void MainWindow::on_actionSet_Library_Folder_triggered() 
+{
+	QString const library = QFileDialog::getExistingDirectory(this, "Select Kicad File", settings->value("last_project").toString());
+	if (!library.isEmpty())
+	{
+		SetLibrary(library);
+	}
 }
 
 void MainWindow::on_actionImport_Rename_Map_triggered()
@@ -220,6 +228,11 @@ void MainWindow::on_actionOpen_Logs_triggered()
 void MainWindow::on_pbProjectFolder_clicked()
 {
 	QDesktopServices::openUrl(QUrl::fromLocalFile(ui->leProjectFolder->text()));
+}
+
+void MainWindow::on_pbLibraryFolder_clicked()
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(ui->leLibraryFolder->text()));
 }
 
 void MainWindow::on_pbRename_clicked()
@@ -390,6 +403,11 @@ void MainWindow::on_pbCheckFP_clicked()
 	library_finder->CheckSchematics();
 }
 
+void MainWindow::on_pbFixFP_clicked()
+{
+	library_finder->FixFootPrints(ui->leLibraryFolder->text());
+}
+
 void MainWindow::on_pbSetPartsInSch_clicked()
 {
 	schematic_adder->AddPartNumbersToSchematics(ui->leProjectFolder->text());
@@ -496,6 +514,13 @@ void MainWindow::SetProject(QString const& project)
 
 	ClearLibrarys();
 	library_finder->LoadProject(proj.absoluteDir().absolutePath());
+}
+
+void MainWindow::SetLibrary(QString const& library)
+{
+	ui->leLibraryFolder->setText(library);
+	settings->setValue("last_library", library);
+	settings->sync();
 }
 
 void MainWindow::RedrawPartList(bool save)
@@ -774,6 +799,12 @@ void MainWindow::ProcessCommandLine()
             "partlist");
     parser.addOption(partlistOption);
 
+	QCommandLineOption libraryOption(QStringList() << "b" << "library",
+		"Set Library Folder.",
+		"library");
+
+	parser.addOption(libraryOption);
+
 	QCommandLineOption reportOption(QStringList() << "o" << "report",
              "Save Check Schematic FootPrints Report.",
             "report");
@@ -786,6 +817,10 @@ void MainWindow::ProcessCommandLine()
 	QCommandLineOption checkOption(QStringList() << "c" << "check",
             "Check Schematic FootPrints.");
     parser.addOption(checkOption);
+
+	QCommandLineOption fixOption(QStringList() << "f" << "fix",
+		"Attempt to Fix Schematic FootPrints.");
+	parser.addOption(fixOption);
 
 	QCommandLineOption replaceOption(QStringList() << "r" << "replace",
             "File to Repace Values in.",
@@ -821,6 +856,15 @@ void MainWindow::ProcessCommandLine()
 		text_replace->LoadJsonFile(appdir + "/mapping.json");
 	}
 
+	if (!parser.value(libraryOption).isEmpty() && QDir(parser.value(libraryOption)).exists())
+	{
+		SetLibrary(parser.value(libraryOption));
+	}
+	else if (QDir(settings->value("last_library").toString()).exists())
+	{
+		SetLibrary(settings->value("last_library").toString());
+	}
+
 	if(!parser.value(projectOption).isEmpty() && QFile::exists(parser.value(projectOption)))
 	{
 		SetProject(parser.value(projectOption));
@@ -843,6 +887,11 @@ void MainWindow::ProcessCommandLine()
 	if(parser.isSet(checkOption))
 	{
 		on_pbCheckFP_clicked();
+	}
+
+	if (parser.isSet(fixOption))
+	{
+		on_pbFixFP_clicked();
 	}
 
 	if(!parser.value(reportOption).isEmpty())

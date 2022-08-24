@@ -32,8 +32,9 @@ public:
 
 public Q_SLOTS:
 
-    void on_actionOpen_Project_triggered();
+    void on_actionOpen_Project_triggered();    
     void on_actionReload_Project_triggered();
+    void on_actionSet_Library_Folder_triggered();
 
     void on_actionImport_Rename_Map_triggered();
     void on_actionImport_PartList_triggered();
@@ -49,6 +50,7 @@ public Q_SLOTS:
     void on_actionOpen_Logs_triggered();
 
     void on_pbProjectFolder_clicked();
+    void on_pbLibraryFolder_clicked();
 
     //1st tab
     void on_pbTextReplace_clicked();
@@ -57,6 +59,7 @@ public Q_SLOTS:
     //2nd tab
     void on_pbReloadLibraries_clicked();
     void on_pbCheckFP_clicked();
+    void on_pbFixFP_clicked();
     //3rd tab
     void on_pbSetPartsInSch_clicked();
     void on_pbAddPN_clicked();
@@ -98,6 +101,7 @@ private:
     QString helpText;
 
     void SetProject(QString const& project);
+    void SetLibrary(QString const& library);
 
     void ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList);
     void CopyRecursive(const std::filesystem::path& src, const std::filesystem::path& target) ;

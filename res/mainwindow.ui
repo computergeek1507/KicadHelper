@@ -451,7 +451,7 @@
      <x>0</x>
      <y>0</y>
      <width>1046</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -477,8 +477,15 @@
      <addaction name="actionBOM_CSV"/>
      <addaction name="actionLibrary_Report"/>
     </widget>
+    <widget class="QMenu" name="menuRecent">
+     <property name="title">
+      <string>Recent</string>
+     </property>
+     <addaction name="actionClear"/>
+    </widget>
     <addaction name="actionOpen_Project"/>
     <addaction name="actionReload_Project"/>
+    <addaction name="menuRecent"/>
     <addaction name="actionSet_Library_Folder"/>
     <addaction name="separator"/>
     <addaction name="menuImport"/>
@@ -576,6 +583,11 @@
   <action name="actionBOM_CSV">
    <property name="text">
     <string>BOM CSV...</string>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="text">
+    <string>Clear</string>
    </property>
   </action>
  </widget>

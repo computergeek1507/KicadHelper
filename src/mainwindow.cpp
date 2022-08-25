@@ -93,6 +93,14 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->actionOverride->setChecked(overrideImport);
 
+	RedrawRecentList();
+
+	int index = settings->value("table_index", -1).toInt();
+	if (-1 != index)
+	{
+		ui->tabWidget->setCurrentIndex(index);
+	}
+
 	QTimer::singleShot( 500, this, SLOT( ProcessCommandLine() ) );
 }
 
@@ -524,6 +532,42 @@ void MainWindow::on_lwFiles_itemDoubleClicked( QListWidgetItem * item)
 	QDesktopServices::openUrl(QUrl::fromLocalFile(ui->leProjectFolder->text() + "/" + item->text()));
 }
 
+void MainWindow::on_twProjectLibraries_cellDoubleClicked(int row, int column)
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(library_finder->updatePath(ui->twProjectLibraries->item(row, 2)->text())));
+}
+
+void MainWindow::on_twGlobalLibraries_cellDoubleClicked(int row, int column)
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(library_finder->updatePath(ui->twGlobalLibraries->item(row, 2)->text())));
+}
+
+void MainWindow::on_tabWidget_currentChanged(int index)
+{
+	settings->setValue("table_index", index);
+	settings->sync();
+}
+
+void MainWindow::on_menuRecent_triggered()
+{
+	auto recentItem = qobject_cast<QAction*>(sender());
+	if (recentItem && !recentItem->data().isNull())
+	{
+		auto const project = qvariant_cast<QString>(recentItem->data());
+		SetProject(project);
+	}
+}
+
+void MainWindow::on_actionClear_triggered()
+{
+	ui->menuRecent->clear();
+	settings->remove("Recent_ProjectsList");
+	//settings->setValue("Recent_ProjectsList")
+
+	ui->menuRecent->addSeparator();
+	ui->menuRecent->addAction(ui->actionClear);
+}
+
 void MainWindow::SetProject(QString const& project)
 {
 	libraryReport.clear();
@@ -558,6 +602,7 @@ void MainWindow::SetProject(QString const& project)
 
 	ClearLibrarys();
 	library_finder->LoadProject(proj.absoluteDir().absolutePath());
+	AddRecentList(proj.absoluteFilePath());
 }
 
 void MainWindow::SetLibrary(QString const& library)
@@ -822,6 +867,39 @@ void MainWindow::AddFootPrintMsg( QString const& message, bool error)
 void MainWindow::ClearFootPrintMsgs()
 {
 	ui->lwResults->clear();
+}
+
+void MainWindow::AddRecentList(QString const& file)
+{
+	auto recentProjectList = settings->value("Recent_ProjectsList").toStringList();
+
+	recentProjectList.push_front(file);
+	recentProjectList.removeDuplicates();
+	if (recentProjectList.size() > 10)
+	{
+		recentProjectList.pop_back();
+	}
+	settings->setValue("Recent_ProjectsList", recentProjectList);
+	settings->sync();
+	RedrawRecentList();
+}
+
+void MainWindow::RedrawRecentList()
+{
+	ui->menuRecent->clear();
+	auto recentProjectList = settings->value("Recent_ProjectsList").toStringList();
+	for (auto const& file : recentProjectList)
+	{
+		QFileInfo fileInfo(file);
+		auto* recentpn = new QAction(this);
+		recentpn->setText(fileInfo.dir().dirName() + "/" + fileInfo.fileName());
+		recentpn->setData(fileInfo.absoluteFilePath());
+		ui->menuRecent->addAction(recentpn);
+		connect(recentpn, &QAction::triggered, this, &MainWindow::on_menuRecent_triggered);
+	}
+
+	ui->menuRecent->addSeparator();
+	ui->menuRecent->addAction(ui->actionClear);
 }
 
 void MainWindow::SaveFootPrintReport(QString const& fileName)

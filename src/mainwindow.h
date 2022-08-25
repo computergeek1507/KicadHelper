@@ -75,6 +75,14 @@ public Q_SLOTS:
 
     void on_lwFiles_itemDoubleClicked( QListWidgetItem * item);
 
+    void on_twProjectLibraries_cellDoubleClicked(int row, int column);
+    void on_twGlobalLibraries_cellDoubleClicked(int row, int column);
+
+    void on_tabWidget_currentChanged(int row);
+
+    void on_menuRecent_triggered();
+    void on_actionClear_triggered();
+
     void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 
     void AddLibrary(QString const& level, QString const& name, QString const& type, QString const& path);
@@ -107,6 +115,9 @@ private:
     QString helpText;
 
     QStringList libraryReport;
+
+    void AddRecentList(QString const& project);
+    void RedrawRecentList();
 
     void SetProject(QString const& project);
     void SetLibrary(QString const& library);

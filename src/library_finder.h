@@ -22,6 +22,7 @@ public:
 	void LoadProject(QString const& folder);
 	bool CheckSchematics();
 	bool FixFootPrints(QString const& folder);
+	QString updatePath(QString path) const;
 
 Q_SIGNALS:
 	void SendMessage( QString const& message,  spdlog::level::level_enum llvl) const;
@@ -41,7 +42,7 @@ private:
 	void ParseLibraries(QString const& path, QString const& level);
 	void SaveLibraryTable(QString const& fileName);
 
-	QString updatePath(QString path) const;
+
 	QString getLibParamter(QString const& parm, QString const& line) const;
 	QString getSchFootprint(QString const& line ) const;
 	QString getSchReference(QString const& line ) const;

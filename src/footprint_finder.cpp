@@ -325,7 +325,7 @@ bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QStri
 
     QString const Kicd6FootprintName{parts[1] + ".kicad_mod"};
 
-    QString const LibNameFolder{libraryPath + "/"+ LibName};
+    QString const LibNameFolder{libraryPath + "/" + LibName};
 
     QString FoundKicdLibPath;
 

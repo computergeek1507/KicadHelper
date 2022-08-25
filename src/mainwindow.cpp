@@ -1102,15 +1102,31 @@ void MainWindow::ProcessCommandLine()
 	parser.addOption(addOption);
 
 	QCommandLineOption checkOption(QStringList() << "c" << "check",
-            "Check Schematic FootPrints.");
+            "Check Schematic Symbols and Footprints.");
     parser.addOption(checkOption);
 
 	QCommandLineOption fixOption(QStringList() << "f" << "find",
-		"Attempt to Find Schematic FootPrints.");
+		"Attempt to Find Symbols and Footprints.");
 	parser.addOption(fixOption);
 
+	QCommandLineOption checkSymOption(QStringList() << "s" << "checksym",
+            "Check Schematic Symbols.");
+    parser.addOption(checkSymOption);
+
+	QCommandLineOption checkFpOption(QStringList() << "n" << "checkfp",
+            "Check Schematic Footprints.");
+    parser.addOption(checkFpOption);
+
+	QCommandLineOption fixSymOption(QStringList() << "y" << "findsym",
+		"Attempt to Find Schematic Symbols.");
+	parser.addOption(fixSymOption);
+
+	QCommandLineOption fixFpOption(QStringList() << "i" << "findfp",
+		"Attempt to Find Schematic Footprints.");
+	parser.addOption(fixFpOption);
+
 	QCommandLineOption replaceOption(QStringList() << "r" << "replace",
-            "File to Repace Values in.",
+            "File to do text Repace in.",
 			"replace");
 
     parser.addOption(replaceOption);
@@ -1172,14 +1188,24 @@ void MainWindow::ProcessCommandLine()
 		on_pbAddPN_clicked();
 	}
 
-	if(parser.isSet(checkOption))
+	if(parser.isSet(checkOption) || parser.isSet(checkFpOption))
 	{
 		on_pbCheckFP_clicked();
 	}
 
-	if (parser.isSet(fixOption))
+	if (parser.isSet(fixOption) || parser.isSet(fixFpOption))
 	{
 		on_pbFixFP_clicked();
+	}
+
+	if(parser.isSet(checkOption) || parser.isSet(checkSymOption))
+	{
+		on_pbCheckSym_clicked();
+	}
+
+	if (parser.isSet(fixOption) || parser.isSet(fixSymOption))
+	{
+		on_pbFixSym_clicked();
 	}
 
 	if (!parser.value(bomOption).isEmpty())

@@ -25,9 +25,9 @@ public:
 	virtual void LoadProject(QString const& folder);
 
 Q_SIGNALS:
-	void SendMessage( QString const& message,  spdlog::level::level_enum llvl) const;
+	void SendMessage( QString const& message,  spdlog::level::level_enum llvl, QString const& file) const;
 
-	void AddLibrary(QString const& level, QString const& name, QString const& type, QString const& path) const;
+	void AddLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path) const;
 	void ClearLibrary(QString const& level) const;
 
 	void SendResult(QString const& message, bool error) const;
@@ -49,8 +49,15 @@ protected:
 
 	QString FindRecurseDirectory(const QString& startDir, const QString& dirName) const;
 	QString FindRecurseFile(const QString& startDir, const QStringList& fileName) const;
+	QStringList FindRecurseFiles(const QString& startDir, const QStringList& fileNames) const;
 
 	QString ConvertToRelativePath(QString const& ogpath, QString const& libraryPath);
+
+	QString getSchSymbol(QString const& line ) const;
+	QString getSchFootprint(QString const& line ) const;
+	QString getSchReference(QString const& line ) const;
+	QString getLibSymbol(QString const& line ) const;
+
 	QString getLibParamter(QString const& parm, QString const& line ) const;
 
 	bool ConvertAllPathsToRelative(QString const& libraryPath);

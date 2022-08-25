@@ -16,16 +16,13 @@ public:
     virtual ~SymbolFinder() {}
 
 	bool CheckSchematics();
-	bool FixSymbols(QString const& folder); 
+	bool FixSymbols(QString const& folder);
 
 Q_SIGNALS:
 
 
 private:
 	void SaveLibraryTable(QString const& fileName);
-
-	QString getSchFootprint(QString const& line ) const;
-	QString getSchReference(QString const& line ) const;
 
 	void getProjectLibraries() override;
 	void getGlobalLibraries() override;
@@ -43,6 +40,7 @@ private:
 	QMap<QString,QStringList> SymbolList;
 
 	QStringList missingSymbolList;
+	QStringList rescueSymbolList;
 };
 
 #endif

@@ -31,7 +31,7 @@ public:
 	std::vector<Mapping> const& getReplaceList() const { return replaceList; }
 
 Q_SIGNALS:
-	void SendMessage( QString const& message, spdlog::level::level_enum llvl) const;
+	void SendMessage( QString const& message, spdlog::level::level_enum llvl, QString const& file) const;
 	void RedrawTextReplace(bool save) const;
 	void UpdateTextRow(int index) const;
 

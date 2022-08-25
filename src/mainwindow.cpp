@@ -3,6 +3,7 @@
 #include "./ui_mainwindow.h"
 
 #include "footprint_finder.h"
+#include "symbol_finder.h" 
 #include "schematic_adder.h"
 #include "text_replace.h"
 
@@ -20,7 +21,9 @@
 #include <QSettings>
 #include <QFileDialog>
 #include <QTextStream>
+#include <QListWidget>
 #include <QListWidgetItem>
+#include <QTableWidget>
 #include <QThread>
 #include <QInputDialog>
 #include <QCommandLineParser>
@@ -32,6 +35,8 @@
 #include "spdlog/sinks/rotating_file_sink.h"
 
 #include <filesystem>
+
+enum LibraryColumns { Name, Type, URL, Descr };
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -76,8 +81,15 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(footprint_finder.get(), &LibraryBase::SendMessage, this, &MainWindow::LogMessage );
 	connect(footprint_finder.get(), &LibraryBase::AddLibrary, this, &MainWindow::AddFootprintLibrary );
 	connect(footprint_finder.get(), &LibraryBase::ClearLibrary, this, &MainWindow::ClearFootprintLibrary );
-	connect(footprint_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddFootPrintMsg );
-	connect(footprint_finder.get(), &LibraryBase::ClearResults, this, &MainWindow::ClearFootPrintMsgs );
+	connect(footprint_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddFootprintMsg );
+	connect(footprint_finder.get(), &LibraryBase::ClearResults, this, &MainWindow::ClearFootprintMsgs );
+
+	symbol_finder = std::make_unique<SymbolFinder>();
+	connect(symbol_finder.get(), &LibraryBase::SendMessage, this, &MainWindow::LogMessage );
+	connect(symbol_finder.get(), &LibraryBase::AddLibrary, this, &MainWindow::AddSymbolLibrary );
+	connect(symbol_finder.get(), &LibraryBase::ClearLibrary, this, &MainWindow::ClearSymbolLibrary );
+	connect(symbol_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddSymbolMsg );
+	connect(symbol_finder.get(), &LibraryBase::ClearResults, this, &MainWindow::ClearSymbolMsgs );
 
 	schematic_adder = std::make_unique<SchematicAdder>();
 	connect(schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
@@ -384,7 +396,7 @@ void MainWindow::on_pbTextReplace_clicked()
 			continue;
 		}
 		ReplaceInFile(file, text_replace->getReplaceList());
-		LogMessage(QString("Updating Text on %1 ").arg(file));
+		LogMessage(QString("Updating Text on %1 ").arg(file), spdlog::level::level_enum::debug, file);
 	}
 }
 
@@ -420,7 +432,7 @@ void MainWindow::on_pbRemoveMap_clicked()
 	}
 }
 
-void MainWindow::on_pbReloadLibraries_clicked()
+void MainWindow::on_pbReloadFPLibraries_clicked()
 {
 	QDir directory(ui->leProjectFolder->text());
 	if (!directory.exists() || ui->leProjectFolder->text().isEmpty())
@@ -434,7 +446,7 @@ void MainWindow::on_pbReloadLibraries_clicked()
 
 void MainWindow::on_pbCheckFP_clicked()
 {
-	ClearFootPrintMsgs();
+	ClearFootprintMsgs();
 	footprint_finder->CheckSchematics();
 }
 
@@ -447,6 +459,35 @@ void MainWindow::on_pbFixFP_clicked()
 		return;
 	}
 	footprint_finder->FixFootPrints(ui->leLibraryFolder->text());
+}
+
+void MainWindow::on_pbReloadSymLibraries_clicked()
+{
+	QDir directory(ui->leProjectFolder->text());
+	if (!directory.exists() || ui->leProjectFolder->text().isEmpty())
+	{
+		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
+		return;
+	}
+	ClearSymbolLibrarys();
+	symbol_finder->LoadProject(ui->leProjectFolder->text());
+}
+
+void MainWindow::on_pbCheckSym_clicked()
+{
+	ClearSymbolMsgs();
+	symbol_finder->CheckSchematics();
+}
+
+void MainWindow::on_pbFixSym_clicked()
+{
+	QDir directory(ui->leLibraryFolder->text());
+	if (!directory.exists()|| ui->leLibraryFolder->text().isEmpty())
+	{
+		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
+		return;
+	}
+	symbol_finder->FixSymbols(ui->leLibraryFolder->text());
 }
 
 void MainWindow::on_pbSetPartsInSch_clicked()
@@ -532,20 +573,43 @@ void MainWindow::on_lwFiles_itemDoubleClicked( QListWidgetItem * item)
 	QDesktopServices::openUrl(QUrl::fromLocalFile(ui->leProjectFolder->text() + "/" + item->text()));
 }
 
-void MainWindow::on_twProjectLibraries_cellDoubleClicked(int row, int column)
+void MainWindow::on_twProjectFPLibraries_cellDoubleClicked(int row, int column)
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(footprint_finder->updatePath(ui->twProjectLibraries->item(row, 2)->text())));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(footprint_finder->updatePath(ui->twProjectFPLibraries->item(row, LibraryColumns::URL)->text())));
 }
 
-void MainWindow::on_twGlobalLibraries_cellDoubleClicked(int row, int column)
+void MainWindow::on_twGlobalFPLibraries_cellDoubleClicked(int row, int column)
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(footprint_finder->updatePath(ui->twGlobalLibraries->item(row, 2)->text())));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(footprint_finder->updatePath(ui->twGlobalFPLibraries->item(row, LibraryColumns::URL)->text())));
+}
+
+void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(symbol_finder->updatePath(ui->twProjectSymLibraries->item(row, LibraryColumns::URL)->text())));
+}
+
+void MainWindow::on_twGlobalSymLibraries_cellDoubleClicked(int row, int column)
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(symbol_finder->updatePath(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text())));
 }
 
 void MainWindow::on_tabWidget_currentChanged(int index)
 {
 	settings->setValue("table_index", index);
 	settings->sync();
+}
+
+void MainWindow::on_lwLogs_itemDoubleClicked(QListWidgetItem * item)
+{
+	if (item)
+	{
+		QVariant data = item->data(Qt::UserRole);
+		QString filePath = data.toString();
+		if(!filePath.isEmpty())
+		{
+			QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+		}
+	}
 }
 
 void MainWindow::on_menuRecent_triggered()
@@ -602,6 +666,9 @@ void MainWindow::SetProject(QString const& project)
 
 	ClearFootprintLibrarys();
 	footprint_finder->LoadProject(proj.absoluteDir().absolutePath());
+
+	ClearSymbolLibrarys();
+	symbol_finder->LoadProject(proj.absoluteDir().absolutePath());
 	AddRecentList(proj.absoluteFilePath());
 }
 
@@ -778,76 +845,48 @@ void MainWindow::MoveRecursive(const std::filesystem::path& src, const std::file
 	}
 }
 
-void MainWindow::AddFootprintLibrary( QString const& level, QString const& name, QString const& type, QString const& path)
+void MainWindow::AddFootprintLibrary( QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path)
 {
 	QTableWidget* libraryList{nullptr};
-	if(PROJECT_LIB==level)
+	if(PROJECT_LIB == level)
 	{
-		libraryList = ui->twProjectLibraries;
-		
-		
-	}else if(GLOBAL_LIB==level)
+		libraryList = ui->twProjectFPLibraries;
+	}
+	else if(GLOBAL_LIB == level)
 	{
-		libraryList = ui->twGlobalLibraries;
+		libraryList = ui->twGlobalFPLibraries;
 	}
 	else
 	{
 		return;
 	}
-	auto SetItem = [&](int row, int col, QString const& text)
-	{
-		libraryList->setItem(row, col, new QTableWidgetItem());
-		libraryList->item(row, col)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-		libraryList->item(row, col)->setText(text);
-	};
-
-	int row = libraryList->rowCount();
-	libraryList->insertRow(row);
-
-	SetItem(row, 0, name);
-	SetItem(row, 1, type);
-	SetItem(row, 2, path);
-
-	libraryList->resizeColumnsToContents();
+	AddLibraryItem(libraryList, name, type, descr, path);
 }
 
 void MainWindow::ClearFootprintLibrary(QString const& level)
 {
-	if(PROJECT_LIB==level)
+	if(PROJECT_LIB == level)
 	{
-		ui->twProjectLibraries->clearContents();
-		while( ui->twProjectLibraries->rowCount() != 0 )
-		{
-			ui->twProjectLibraries->removeRow(0);
-		}
-		
+		ClearTableWidget(ui->twProjectFPLibraries);
 	}
-	if(GLOBAL_LIB==level)
+	if(GLOBAL_LIB == level)
 	{
-		ui->twGlobalLibraries->clearContents();
-		while( ui->twGlobalLibraries->rowCount() != 0 )
-		{
-			ui->twGlobalLibraries->removeRow(0);
-		}
+		ClearTableWidget(ui->twGlobalFPLibraries);
 	}
 }
 
 void MainWindow::ClearFootprintLibrarys()
 {
-	ui->twGlobalLibraries->clearContents();
-	while( ui->twGlobalLibraries->rowCount() != 0 )
-	{
-		ui->twGlobalLibraries->removeRow(0);
-	}
-
-	ui->twProjectLibraries->clearContents();
-	while( ui->twProjectLibraries->rowCount() != 0 )
-	{
-		ui->twProjectLibraries->removeRow(0);
-	}
+	ClearTableWidget(ui->twGlobalFPLibraries);
+	ClearTableWidget(ui->twProjectFPLibraries);
 }
 
-void MainWindow::AddFootPrintMsg( QString const& message, bool error)
+void MainWindow::AddFootprintMsg( QString const& message, bool error)
+{
+	AddResultMsg(ui->lwFPResults, message ,error);
+}
+
+void MainWindow::AddResultMsg( QListWidget * listw, QString const& message, bool error)
 {
 	libraryReport.append(message);
 	QListWidgetItem* it = new QListWidgetItem(message);
@@ -860,13 +899,88 @@ void MainWindow::AddFootPrintMsg( QString const& message, bool error)
 	{
 		it->setForeground(QBrush(Qt::blue));
 	}
-	ui->lwResults->addItem(it);
-	ui->lwResults->scrollToBottom();
+	listw->addItem(it);
+	listw->scrollToBottom();
 }
 
-void MainWindow::ClearFootPrintMsgs()
+void MainWindow::AddSymbolLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path)
 {
-	ui->lwResults->clear();
+	QTableWidget* libraryList{nullptr};
+	if(PROJECT_LIB == level)
+	{
+		libraryList = ui->twProjectSymLibraries;
+	}
+	else if(GLOBAL_LIB == level)
+	{
+		libraryList = ui->twGlobalSymLibraries;
+	}
+	else
+	{
+		return;
+	}
+	AddLibraryItem(libraryList, name, type, descr, path);
+}
+
+void MainWindow::ClearSymbolLibrary(QString const& level)
+{
+	if(PROJECT_LIB == level)
+	{
+		ClearTableWidget(ui->twProjectSymLibraries);
+	}
+	if(GLOBAL_LIB == level)
+	{
+		ClearTableWidget(ui->twGlobalSymLibraries);
+	}
+}
+
+void MainWindow::ClearSymbolLibrarys()
+{
+	ClearTableWidget(ui->twGlobalSymLibraries);
+	ClearTableWidget(ui->twProjectSymLibraries);
+}
+
+void MainWindow::ClearTableWidget(QTableWidget * table)
+{
+	table->clearContents();
+	while( table->rowCount() != 0 )
+	{
+		table->removeRow(0);
+	}
+}
+
+void MainWindow::AddSymbolMsg( QString const& message, bool error)
+{
+	AddResultMsg(ui->lwSymResults, message ,error);
+}
+
+void MainWindow::ClearSymbolMsgs()
+{
+	ui->lwSymResults->clear();
+}
+
+void MainWindow::ClearFootprintMsgs()
+{
+	ui->lwFPResults->clear();
+}
+
+void MainWindow::AddLibraryItem(QTableWidget* libraryList, QString const& name, QString const& type, QString const& descr, QString const& path)
+{
+	auto SetItem = [&](int row, int col, QString const& text)
+	{
+		libraryList->setItem(row, col, new QTableWidgetItem());
+		libraryList->item(row, col)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+		libraryList->item(row, col)->setText(text);
+	};
+
+	int row = libraryList->rowCount();
+	libraryList->insertRow(row);
+
+	SetItem(row, LibraryColumns::Name, name);
+	SetItem(row, LibraryColumns::Type, type);
+	SetItem(row, LibraryColumns::Descr, descr);
+	SetItem(row, LibraryColumns::URL, path);
+
+	libraryList->resizeColumnsToContents();
 }
 
 void MainWindow::AddRecentList(QString const& file)
@@ -907,7 +1021,7 @@ void MainWindow::SaveFootPrintReport(QString const& fileName)
 	QFile outFile(fileName);
 	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
 	{
-		LogMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+		LogMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn, fileName);
 		return;
 	}
 	QTextStream out(&outFile);
@@ -916,10 +1030,10 @@ void MainWindow::SaveFootPrintReport(QString const& fileName)
 		out << line << "\n";
 	}	
 	outFile.close();
-	LogMessage(QString("Saved Report to '%1'").arg(outFile.fileName()));
+	LogMessage(QString("Saved Report to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug, fileName);
 }
 
-void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum llvl)
+void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum llvl, QString const& file)
 {
 	logger->log(llvl, message.toStdString());
 	/*
@@ -941,6 +1055,7 @@ void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum ll
 
 	QListWidgetItem* it = new QListWidgetItem(message);
 	it->setForeground(QBrush(QColor(msgColors.at(llvl))));
+	it->setData(Qt::UserRole, file);
 	ui->lwLogs->addItem(it);
 	ui->lwLogs->scrollToBottom();
 

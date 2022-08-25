@@ -70,20 +70,20 @@ bool SchematicAdder::AddPartNumbersToSchematics(QString const& schDir) const
 {
 	if (partList.empty())
 	{
-		emit SendMessage("Part List is empty", spdlog::level::level_enum::warn);
+		emit SendMessage("Part List is empty", spdlog::level::level_enum::warn, QString());
 		return false;
 	}
 	QDir directory(schDir);
 	if (!directory.exists())
 	{
-		emit SendMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
+		emit SendMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn, QString());
 		return false;
 	}
 
 	auto const& kicadFiles {directory.entryInfoList(QStringList() << "*.kicad_sch" , QDir::Files)};
 	for (auto const& file : kicadFiles)
 	{
-		emit SendMessage(QString("Updating PN's in '%1'").arg(file.fileName()), spdlog::level::level_enum::debug);
+		emit SendMessage(QString("Updating PN's in '%1'").arg(file.fileName()), spdlog::level::level_enum::debug, file.absoluteFilePath());
 		UpdateSchematic(file.absoluteFilePath());
 	}
 	return true;
@@ -109,7 +109,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn, schPath);
 		return;
 	}
 	QTextStream in(&inFile);
@@ -142,7 +142,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				lastDigikey = value;
 				if (lastDigikey != newDigikey && !newDigikey.isEmpty())
 				{
-					emit SendMessage(QString("Updating '%1' Digikey to '%2'").arg(lastRef).arg(newDigikey), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Updating '%1' Digikey to '%2'").arg(lastRef).arg(newDigikey), spdlog::level::level_enum::debug, QString());
 					outLine.replace("\"" + lastDigikey + "\"", "\"" + newDigikey + "\"");
 					lastDigikey = newDigikey;
 				}
@@ -152,7 +152,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				lastLcsc = value;
 				if (lastLcsc != newLcsc && !newLcsc.isEmpty())
 				{
-					emit SendMessage(QString("Updating '%1' LCSC to '%2'").arg(lastRef).arg(newLcsc), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Updating '%1' LCSC to '%2'").arg(lastRef).arg(newLcsc), spdlog::level::level_enum::debug, QString());
 					outLine.replace("\"" + lastLcsc + "\"", "\"" + newLcsc + "\"");
 					lastLcsc = newLcsc;
 				}
@@ -162,7 +162,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				lastMPN = value;
 				if (lastMPN != newMPN && !newMPN.isEmpty())
 				{
-					emit SendMessage(QString("Updating '%1' MPN to '%2'").arg(lastRef).arg(newMPN), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Updating '%1' MPN to '%2'").arg(lastRef).arg(newMPN), spdlog::level::level_enum::debug, QString());
 					outLine.replace("\"" + lastMPN + "\"", "\"" + newMPN + "\"");
 					lastMPN = newMPN;
 				}
@@ -197,7 +197,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 						newLcsc = part.lcsc;
 						newMPN = part.mpn;
 						found = true;
-						emit SendMessage(QString("Part Found based on FootPrint '%1':'%2'").arg(part.value).arg(part.footPrint), spdlog::level::level_enum::debug);
+						emit SendMessage(QString("Part Found based on FootPrint '%1':'%2'").arg(part.value).arg(part.footPrint), spdlog::level::level_enum::debug, QString());
 						break;
 					}
 				}
@@ -210,7 +210,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 							newDigikey = part.digikey;
 							newLcsc = part.lcsc;
 							newMPN = part.mpn;
-							emit SendMessage(QString("Part Found based on Value '%1':'%2'").arg(part.value).arg(part.footPrint), spdlog::level::level_enum::debug);
+							emit SendMessage(QString("Part Found based on Value '%1':'%2'").arg(part.value).arg(part.footPrint), spdlog::level::level_enum::debug, QString());
 							break;
 						}
 					}
@@ -231,7 +231,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				int newid = lastID + 1;
 				if (addDigi)
 				{
-					emit SendMessage(QString("Adding '%1' DigiKey '%2'").arg(lastRef).arg(newDigikey), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Adding '%1' DigiKey '%2'").arg(lastRef).arg(newDigikey), spdlog::level::level_enum::debug, QString());
 					QString newTxt = QString("    (property \"Digi-Key_PN\" \"%1\" (id %2) (at %3 0)").arg(newDigikey).arg(newid).arg(lastLoc);
 					newlines.push_back(newTxt);
 					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
@@ -240,7 +240,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				}
 				if (addLcsc)
 				{
-					emit SendMessage(QString("Adding '%1' LCSC '%2'").arg(lastRef).arg(newLcsc), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Adding '%1' LCSC '%2'").arg(lastRef).arg(newLcsc), spdlog::level::level_enum::debug, QString());
 					QString newTxt = QString("    (property \"LCSC\" \"%1\" (id %2) (at %3 0)").arg(newLcsc).arg(newid).arg(lastLoc);
 					newlines.push_back(newTxt);
 					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
@@ -249,7 +249,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 				}
 				if (addMPN)
 				{
-					emit SendMessage(QString("Adding '%1' MPN '%2'").arg(lastRef).arg(newMPN), spdlog::level::level_enum::debug);
+					emit SendMessage(QString("Adding '%1' MPN '%2'").arg(lastRef).arg(newMPN), spdlog::level::level_enum::debug, QString());
 					QString newTxt = QString("    (property \"MPN\" \"%1\" (id %2) (at %3 0)").arg(newMPN).arg(newid).arg(lastLoc);
 					newlines.push_back(newTxt);
 					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
@@ -281,13 +281,13 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 	}
 	catch (std::exception ex)
 	{
-		emit SendMessage(QString("Could not Create '%1_old'").arg(schPath), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Create '%1_old'").arg(schPath), spdlog::level::level_enum::warn, schPath);
 	}
 
 	QFile outFile(schPath);
 	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn, schPath);
 		return;
 	}
 	QTextStream out(&outFile);
@@ -303,7 +303,7 @@ void SchematicAdder::LoadJsonFile(const QString& jsonFile)
 	//emit SendMessage("Loading json file " + jsonFile, spdlog::level::level_enum::debug);
 	if (!loadFile.open(QIODevice::ReadOnly))
 	{
-		emit SendMessage("Error Opening: " + jsonFile, spdlog::level::level_enum::err);
+		emit SendMessage("Error Opening: " + jsonFile, spdlog::level::level_enum::err, jsonFile);
 		return;
 	}
 
@@ -313,7 +313,7 @@ void SchematicAdder::LoadJsonFile(const QString& jsonFile)
 
 	read(loadDoc.object());
 
-	emit SendMessage("Loaded Json: " + jsonFile, spdlog::level::level_enum::debug);
+	emit SendMessage("Loaded Json: " + jsonFile, spdlog::level::level_enum::debug, jsonFile);
 	//Q_EMIT RedrawScreen();
 	emit RedrawPartList(false);
 }
@@ -324,7 +324,7 @@ void SchematicAdder::SaveJsonFile(const QString& jsonFile) const
 	//emit SendMessage("Saving json file " + jsonFile, spdlog::level::level_enum::debug);
 	if (!saveFile.open(QIODevice::WriteOnly))
 	{
-		emit SendMessage("Error Saving: " + jsonFile, spdlog::level::level_enum::err);
+		emit SendMessage("Error Saving: " + jsonFile, spdlog::level::level_enum::err, jsonFile);
 		return;
 	}
 
@@ -332,7 +332,7 @@ void SchematicAdder::SaveJsonFile(const QString& jsonFile) const
 	write(projectObject);
 	QJsonDocument saveDoc(projectObject);
 	saveFile.write(saveDoc.toJson());
-	emit SendMessage("Saved Json to: " + jsonFile, spdlog::level::level_enum::debug);
+	emit SendMessage("Saved Json to: " + jsonFile, spdlog::level::level_enum::debug, jsonFile);
 }
 
 void SchematicAdder::write(QJsonObject& json) const
@@ -458,7 +458,7 @@ void SchematicAdder::ImportSchematicParts(QStringList const& schFiles, bool over
 
 		if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
 		{
-			emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn);
+			emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn, schPath);
 			return;
 		}
 		QTextStream in(&inFile);
@@ -467,7 +467,7 @@ void SchematicAdder::ImportSchematicParts(QStringList const& schFiles, bool over
 			lines.emplace_back(in.readLine());
 		}
 		inFile.close();
-		emit SendMessage("Importing From: " + schPath, spdlog::level::level_enum::debug);
+		emit SendMessage("Importing From: " + schPath, spdlog::level::level_enum::debug, schPath);
 
 		bool partSection{false};
 		for (auto const& line : lines)
@@ -552,7 +552,7 @@ void SchematicAdder::ImportSchematicParts(QStringList const& schFiles, bool over
 	}
 	else
 	{
-		emit SendMessage("No parts Added...", spdlog::level::level_enum::debug);
+		emit SendMessage("No parts Added...", spdlog::level::level_enum::debug, QString());
 	}
 }
 
@@ -561,7 +561,7 @@ void SchematicAdder::SavePartNumerCSV(QString const& fileName) const
 	QFile outFile(fileName);
 	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn, fileName);
 		return;
 	}
 	QTextStream out(&outFile);
@@ -572,20 +572,20 @@ void SchematicAdder::SavePartNumerCSV(QString const& fileName) const
 		out << part.asString() << "\n";
 	}
 	outFile.close();
-	emit SendMessage(QString("Saved PartList CSV to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug);
+	emit SendMessage(QString("Saved PartList CSV to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug, fileName);
 }
 
 void SchematicAdder::GenerateBOM(QString const& fileName, QString const& schDir)
 {
 	if (partList.empty())
 	{
-		emit SendMessage("Part List is empty", spdlog::level::level_enum::warn);
+		emit SendMessage("Part List is empty", spdlog::level::level_enum::warn, QString());
 		return;
 	}
 	QDir directory(schDir);
 	if (!directory.exists())
 	{
-		emit SendMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
+		emit SendMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn, QString());
 		return;
 	}
 
@@ -613,7 +613,7 @@ void SchematicAdder::ParseForBOM(QString const& fileName)
 
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn, fileName);
 		return;
 	}
 	QTextStream in(&inFile);
@@ -713,7 +713,7 @@ void SchematicAdder::SaveBOM(QString const& fileName)
 	QFile outFile(fileName);
 	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn, fileName);
 		return;
 	}
 	QTextStream out(&outFile);
@@ -724,5 +724,5 @@ void SchematicAdder::SaveBOM(QString const& fileName)
 		out << part.asString() << "\n";
 	}
 	outFile.close();
-	emit SendMessage(QString("Saved BOM CSV to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug);
+	emit SendMessage(QString("Saved BOM CSV to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug, fileName);
 }

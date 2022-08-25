@@ -95,13 +95,13 @@ void LibraryBase::AddLibraryPath(QString name, QString type, QString url, QStrin
         found == libraryList[level].end())
     {
         libraryList[level].emplace_back(name, type, url, "", "");
-        emit SendMessage(QString("Adding '%1'").arg(name), spdlog::level::level_enum::debug);
+        emit SendMessage(QString("Adding '%1'").arg(name), spdlog::level::level_enum::debug, QString());
     }
     else
     {
         auto index = std::distance(libraryList[level].begin(), found);
         libraryList[level][index] = std::move(LibraryInfo(name, type, url, "", ""));
-        emit SendMessage(QString("Updating '%1'").arg(name), spdlog::level::level_enum::debug);
+        emit SendMessage(QString("Updating '%1'").arg(name), spdlog::level::level_enum::debug, QString());
     }
 }
 
@@ -111,7 +111,7 @@ void LibraryBase::ParseLibraries(QString const& path, QString const& level)
 
     if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        emit SendMessage(QString("Could not Open '%1'").arg(path), spdlog::level::level_enum::warn);
+        emit SendMessage(QString("Could not Open '%1'").arg(path), spdlog::level::level_enum::warn, path);
         return;
     }
     QTextStream in(&inFile);
@@ -125,11 +125,99 @@ void LibraryBase::ParseLibraries(QString const& path, QString const& level)
         QString descr = getLibParamter("descr", line);
         if (!name.isEmpty() && !type.isEmpty() && !uri.isEmpty())
         {
-            emit AddLibrary(level, name, type, uri);
+            emit AddLibrary(level, name, type, descr, uri);
             libraryList[level].emplace_back(name, type, uri, options, descr);
         }
     }
     inFile.close();
+}
+
+QString LibraryBase::getSchFootprint(QString const& line ) const
+{
+    QString prop(R"((property "Footprint")");
+    int stInd =  line.indexOf(prop );
+
+    if(stInd == -1 )
+    {
+         return QString();
+    }
+    int endInd =  line.indexOf("(",stInd + 1 );
+
+    if(stInd == endInd || stInd ==-1 || endInd == -1)
+    {
+        return QString();
+    }
+    int nstr {stInd + prop.size() + 1};
+    QString value = line.mid(nstr, endInd - nstr - 1);
+
+    value = kicad_utils::CleanQuotes(value);
+    return value;
+}
+
+QString LibraryBase::getSchReference(QString const& line ) const
+{
+    QString prop(R"((property "Reference")");
+    int stInd =  line.indexOf(prop );
+
+    if(stInd == -1 )
+    {
+         return QString();
+    }
+    int endInd =  line.indexOf("(",stInd + 1 );
+
+    if(stInd == endInd || stInd ==-1 || endInd == -1)
+    {
+        return QString();
+    }
+    int nstr {stInd + prop.size() + 1};
+    QString value = line.mid(nstr, endInd - nstr - 1);
+
+    value = kicad_utils::CleanQuotes(value);
+    return value;
+}
+
+QString LibraryBase::getSchSymbol(QString const& line ) const
+{
+    QString prop(R"((symbol (lib_id )");
+    int stInd =  line.indexOf(prop );
+
+    if(stInd == -1 )
+    {
+         return QString();
+    }
+    int endInd =  line.indexOf(")",stInd + 1 );
+
+    if(stInd == endInd || stInd ==-1 || endInd == -1)
+    {
+        return QString();
+    }
+    int nstr {stInd + prop.size() + 1};
+    QString value = line.mid(nstr, endInd - nstr - 1);
+
+    value = kicad_utils::CleanQuotes(value);
+    return value;
+}
+
+QString LibraryBase::getLibSymbol(QString const& line ) const
+{
+    QString prop(R"((symbol )");
+    int stInd =  line.indexOf(prop );
+
+    if(stInd == -1 )
+    {
+         return QString();
+    }
+    int endInd =  line.indexOf("(",stInd + 1 );
+
+    if(stInd == endInd || stInd ==-1 || endInd == -1)
+    {
+        return QString();
+    }
+    int nstr {stInd + prop.size() + 1};
+    QString value = line.mid(nstr, endInd - nstr - 1);
+
+    value = kicad_utils::CleanQuotes(value);
+    return value;
 }
 
 QString LibraryBase::getLibParamter(QString const& parm, QString const& line ) const
@@ -161,7 +249,7 @@ QString LibraryBase::ConvertToRelativePath(QString const& ogpath, QString const&
     if(path.startsWith(m_projectFolder))
     {
         path = path.replace(m_projectFolder, PROJ_FOLDER.data());
-        emit SendMessage(QString("Converted '%1' to '%2'").arg( ogpath ).arg(path), spdlog::level::level_enum::debug);
+        emit SendMessage(QString("Converted '%1' to '%2'").arg( ogpath ).arg(path), spdlog::level::level_enum::debug, QString());
         return path;
     }
 
@@ -201,7 +289,7 @@ QString LibraryBase::ConvertToRelativePath(QString const& ogpath, QString const&
     {
         QString newFolder = startLibRelative + folders;//added up and downs paths together
         path = path.replace(libraryPath + "/", newFolder);
-        emit SendMessage(QString("Converted '%1' to '%2'").arg( ogpath ).arg(path), spdlog::level::level_enum::debug);
+        emit SendMessage(QString("Converted '%1' to '%2'").arg( ogpath ).arg(path), spdlog::level::level_enum::debug, QString());
         return path;
     }
     return path;
@@ -260,4 +348,31 @@ QString LibraryBase::FindRecurseFile(const QString& startDir, const QStringList&
         }
     }
     return QString();
+}
+
+QStringList LibraryBase::FindRecurseFiles(const QString& startDir, const QStringList& fileNames) const
+{
+
+    QStringList returnList;
+	QDir dir(startDir);
+	dir.setNameFilters(fileNames);
+    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+
+    for(auto const& file : dir.entryInfoList())
+    {
+         returnList.append(file.filePath());
+    }
+
+    dir.setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+    QStringList dirList = dir.entryList();
+    for (int i=0; i<dirList.size(); ++i)
+    {
+        QString newPath = QString("%1/%2").arg(dir.absolutePath()).arg(dirList.at(i));
+        auto paths{FindRecurseFiles(newPath, fileNames)};
+        if(!paths.isEmpty())
+        {
+            returnList.append(paths);
+        }
+    }
+    return returnList;
 }

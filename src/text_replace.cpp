@@ -57,7 +57,7 @@ void TextReplace::LoadJsonFile(const QString& jsonFile)
 	//emit SendMessage("Loading json file " + jsonFile, spdlog::level::level_enum::debug);
 	if (!loadFile.open(QIODevice::ReadOnly))
 	{
-		emit SendMessage("Error Opening: " + jsonFile, spdlog::level::level_enum::err);
+		emit SendMessage("Error Opening: " + jsonFile, spdlog::level::level_enum::err, jsonFile);
 		return;
 	}
 
@@ -67,7 +67,7 @@ void TextReplace::LoadJsonFile(const QString& jsonFile)
 
 	read(loadDoc.object());
 
-	emit SendMessage("Loaded Json: " + jsonFile, spdlog::level::level_enum::debug);
+	emit SendMessage("Loaded Json: " + jsonFile, spdlog::level::level_enum::debug, jsonFile);
 	emit RedrawTextReplace(false);
 	//Q_EMIT RedrawScreen();
 }
@@ -78,7 +78,7 @@ void TextReplace::SaveJsonFile(const QString& jsonFile)
 	//emit SendMessage("Saving json file " + jsonFile, spdlog::level::level_enum::debug);
 	if (!saveFile.open(QIODevice::WriteOnly))
 	{
-		emit SendMessage("Error Saving: " + jsonFile, spdlog::level::level_enum::err);
+		emit SendMessage("Error Saving: " + jsonFile, spdlog::level::level_enum::err, jsonFile);
 		return;
 	}
 
@@ -86,7 +86,7 @@ void TextReplace::SaveJsonFile(const QString& jsonFile)
 	write(projectObject);
 	QJsonDocument saveDoc(projectObject);
 	saveFile.write(saveDoc.toJson());
-	emit SendMessage("Saved Json to: " + jsonFile, spdlog::level::level_enum::debug);
+	emit SendMessage("Saved Json to: " + jsonFile, spdlog::level::level_enum::debug, jsonFile);
 }
 
 void TextReplace::write(QJsonObject& json) const
@@ -138,7 +138,7 @@ void TextReplace::SaveMappingCSV(QString const& fileName) const
 	QFile outFile(fileName);
 	if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn, fileName);
 		return;
 	}
 	QTextStream out(&outFile);
@@ -147,5 +147,5 @@ void TextReplace::SaveMappingCSV(QString const& fileName) const
 		out << replace.asString() << "\n";
 	}	
 	outFile.close();
-	emit SendMessage(QString("Saved Mapping CSV to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug);
+	emit SendMessage(QString("Saved Mapping CSV to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug, outFile.fileName());
 }

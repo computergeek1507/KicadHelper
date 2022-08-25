@@ -18,23 +18,10 @@ public:
     ~FootprintFinder() {}
 
 	bool CheckSchematics();
-	bool FixFootPrints(QString const& folder);
- 
-
-Q_SIGNALS:
-	void AddLibrary( QString const& level, QString const& name, QString const& type, QString const& path) const;
-
-	void ClearLibrary( QString const& level) const;
-
-	void SendResult( QString const& message, bool error) const;
-	void ClearResults() const;
+	bool FixFootPrints(QString const& folder); 
 
 private:
-
 	void SaveLibraryTable(QString const& fileName);
-
-	QString getSchFootprint(QString const& line ) const;
-	QString getSchReference(QString const& line ) const;
 
 	void getProjectLibraries() override;
 	void getGlobalLibraries() override;
@@ -49,10 +36,6 @@ private:
 
 	bool AttemptToFindFootPrintPath(QString const& footprint, QString const& libraryPath );
 	bool ConvertAllPathsToRelative(QString const& libraryPath);
-
-	void AddLibraryPath(QString name, QString type, QString url, QString const& level);
-	
-
 
 	QMap<QString,QStringList> footprintList;
 

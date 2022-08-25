@@ -35,7 +35,7 @@ public:
 	std::vector<PartInfo> const& getPartList() const { return partList; }
 
 Q_SIGNALS:
-	void SendMessage( QString const& message, spdlog::level::level_enum llvl) const;
+	void SendMessage( QString const& message, spdlog::level::level_enum llvl, QString const& file) const;
 	void RedrawPartList( bool save) const;
 	void UpdatePartRow(int index) const;
 

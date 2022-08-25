@@ -30,18 +30,16 @@ void FootprintFinder::getGlobalLibraries()
     }
     else
     {
-        emit SendMessage(QString("Could not Open '%1'").arg(getGlobalFootprintTablePath()), spdlog::level::level_enum::warn);
+        emit SendMessage(QString("Could not Open '%1'").arg(getGlobalFootprintTablePath()), spdlog::level::level_enum::warn, getGlobalFootprintTablePath());
     }
 }
-
-
 
 void FootprintFinder::SaveLibraryTable(QString const& fileName)
 {
     QFile outFile(fileName);
     if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
     {
-        emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn);
+        emit SendMessage(QString("Could not Open '%1'").arg(fileName), spdlog::level::level_enum::warn, fileName);
         return;
     }
     QTextStream out(&outFile);
@@ -53,14 +51,14 @@ void FootprintFinder::SaveLibraryTable(QString const& fileName)
     }
     out << ")\n";
     outFile.close();
-    emit SendMessage(QString("Saved Library Table to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug);
+    emit SendMessage(QString("Saved Library Table to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug, outFile.fileName());
 }
 
 bool FootprintFinder::CheckSchematics()
 {
 	if (libraryList.empty())
 	{
-		emit SendMessage("Library List is empty", spdlog::level::level_enum::warn);
+		emit SendMessage("Library List is empty", spdlog::level::level_enum::warn, QString());
 		return false;
 	}
 
@@ -69,7 +67,7 @@ bool FootprintFinder::CheckSchematics()
 	QDir directory(m_projectFolder);
 	if (!directory.exists())
 	{
-		emit SendMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
+		emit SendMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn, QString());
 		return false;
 	}
 
@@ -78,7 +76,7 @@ bool FootprintFinder::CheckSchematics()
     auto const& kicadFiles {directory.entryInfoList(QStringList() << "*.kicad_sch" , QDir::Files)};
 	for (auto const& file : kicadFiles)
 	{
-		emit SendMessage(QString("Checking '%1'").arg(file.fileName()), spdlog::level::level_enum::debug);
+		emit SendMessage(QString("Checking '%1'").arg(file.fileName()), spdlog::level::level_enum::debug, file.absoluteFilePath());
 		CheckSchematic(file.absoluteFilePath());
 	}
 	return true;
@@ -91,7 +89,7 @@ void FootprintFinder::CheckSchematic(QString const& schPath)
 
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn);
+		emit SendMessage(QString("Could not Open '%1'").arg(schPath), spdlog::level::level_enum::warn, schPath);
 		return;
 	}
     bool errorFound{false};
@@ -172,7 +170,7 @@ void FootprintFinder::CreateFootprintList()
         {
             if(footprintList.contains(lib.name))
             {
-                SendMessage(QString("Duplicate Libraries %1").arg(lib.name), spdlog::level::level_enum::warn);
+                SendMessage(QString("Duplicate Libraries %1").arg(lib.name), spdlog::level::level_enum::warn, QString());
                 continue;
             }
             QStringList fps;
@@ -267,50 +265,6 @@ QStringList FootprintFinder::GetKicadFootPrints(QString const& url) const
     return list;
 }
 
-QString FootprintFinder::getSchFootprint(QString const& line ) const
-{
-    QString prop(R"((property "Footprint")");
-    int stInd =  line.indexOf(prop );
-
-    if(stInd == -1 )
-    {
-         return QString();
-    }
-    int endInd =  line.indexOf("(",stInd + 1 );
-
-    if(stInd == endInd || stInd ==-1 || endInd == -1)
-    {
-        return QString();
-    }
-    int nstr {stInd + prop.size() + 1};
-    QString value = line.mid(nstr, endInd - nstr - 1);
-
-    value = kicad_utils::CleanQuotes(value);
-    return value;
-}
-
-QString FootprintFinder::getSchReference(QString const& line ) const
-{
-    QString prop(R"((property "Reference")");
-    int stInd =  line.indexOf(prop );
-
-    if(stInd == -1 )
-    {
-         return QString();
-    }
-    int endInd =  line.indexOf("(",stInd + 1 );
-
-    if(stInd == endInd || stInd ==-1 || endInd == -1)
-    {
-        return QString();
-    }
-    int nstr {stInd + prop.size() + 1};
-    QString value = line.mid(nstr, endInd - nstr - 1);
-
-    value = kicad_utils::CleanQuotes(value);
-    return value;
-}
-
 bool FootprintFinder::FixFootPrints(QString const& folder)
 {
     bool worked{false};
@@ -367,42 +321,83 @@ bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QStri
     }
     auto parts {footprint.split(":")};
 
-    QString const Kicd6FootPrintName{parts[1]+ ".kicad_mod"};
+    QString const LibName{parts[0]};
 
-    QString KicdLibPath{FindRecurseFile(libraryPath, QStringList(Kicd6FootPrintName))};
+    QString const Kicd6FootprintName{parts[1] + ".kicad_mod"};
 
-    if(!KicdLibPath.isEmpty())
+    QString const LibNameFolder{libraryPath + "/"+ LibName};
+
+    QString FoundKicdLibPath;
+
+    //first look for libraries in foldse the same as the library name
+    QDir libdir(LibNameFolder);
+    if(libdir.exists())
     {
-        //convert from footprint file path to library folder path
-        //convert to relative path
-        //add to library file
-        QFileInfo prettyPath(KicdLibPath);
-        auto newPath{ConvertToRelativePath(prettyPath.absolutePath(),libraryPath )};
+        FoundKicdLibPath = FindRecurseFile(LibNameFolder, QStringList(Kicd6FootprintName));
+        if(!FoundKicdLibPath.isEmpty())
+        {
+            //convert from footprint file path to library folder path
+            //convert to relative path
+            //add to library file
+            QFileInfo prettyPath(FoundKicdLibPath);
+            auto newPath{ConvertToRelativePath(prettyPath.absolutePath(),libraryPath )};
 
-        emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug);
-        AddLibraryPath(parts[0],"KiCad", newPath, PROJECT_LIB);
-        return true;
-    }
-    else
-    {
-        QStringList const KicdLegacyLibName{parts[0]+ ".mod", parts[1]+ ".mod", parts[0]+ "*.mod", parts[1]+ "*.mod"};
-        KicdLibPath = FindRecurseFile(libraryPath, KicdLegacyLibName);
-        if(!KicdLibPath.isEmpty())
+            emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, prettyPath.absolutePath());
+            AddLibraryPath(parts[0],"KiCad", newPath, PROJECT_LIB);
+            return true;
+        }
+
+        FoundKicdLibPath = FindRecurseFile(LibNameFolder, {"*.mod"});
+        if(!FoundKicdLibPath.isEmpty())
         {
             //legacy
-            auto Footprints = GetLegacyFootPrints(KicdLibPath);
+            auto Footprints = GetLegacyFootPrints(FoundKicdLibPath);
             if(Footprints.contains(parts[1]))
             {
                 //found something
                 //convert to relative path
                 //add to library file
-                auto newPath{ConvertToRelativePath(KicdLibPath,libraryPath)};
-                emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug);
+                auto newPath{ConvertToRelativePath(FoundKicdLibPath,libraryPath)};
+                emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, FoundKicdLibPath);
                 AddLibraryPath(parts[0],"Legacy", newPath,PROJECT_LIB);
                 return true;
             }
         }
     }
+
+    FoundKicdLibPath = FindRecurseFile(libraryPath, QStringList(Kicd6FootprintName));
+
+    if(!FoundKicdLibPath.isEmpty())
+    {
+        //convert from footprint file path to library folder path
+        //convert to relative path
+        //add to library file
+        QFileInfo prettyPath(FoundKicdLibPath);
+        auto newPath{ConvertToRelativePath(prettyPath.absolutePath(),libraryPath )};
+
+        emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, prettyPath.absolutePath());
+        AddLibraryPath(parts[0],"KiCad", newPath, PROJECT_LIB);
+        return true;
+    }
+
+    QStringList const KicdLegacyLibName{LibName + ".mod", parts[1]+ ".mod", LibName + "*.mod", parts[1]+ "*.mod"};
+    FoundKicdLibPath = FindRecurseFile(libraryPath, KicdLegacyLibName);
+    if(!FoundKicdLibPath.isEmpty())
+    {
+        //legacy
+        auto Footprints = GetLegacyFootPrints(FoundKicdLibPath);
+        if(Footprints.contains(parts[1]))
+        {
+            //found something
+            //convert to relative path
+            //add to library file
+            auto newPath{ConvertToRelativePath(FoundKicdLibPath,libraryPath)};
+            emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, FoundKicdLibPath);
+            AddLibraryPath(parts[0],"Legacy", newPath,PROJECT_LIB);
+            return true;
+        }
+    }
+    
     return false;
 }
 
@@ -419,23 +414,4 @@ bool FootprintFinder::ConvertAllPathsToRelative(QString const& libraryPath)
         }
     }
     return worked;
-}
-
-void FootprintFinder::AddLibraryPath(QString name, QString type, QString url, QString const& level)
-{
-    if (auto const found { 
-            std::find_if(libraryList[level].begin(), libraryList[level].end(), [&](auto const & elem)
-		    { return elem.name == name; })
-        };
-    found == libraryList[level].end()) 
-	{
-		libraryList[level].emplace_back(name, type,url, "","" );
-        emit SendMessage(QString("Adding '%1'").arg( name ), spdlog::level::level_enum::debug);
-	}
-	else
-	{
-		auto index = std::distance(libraryList[level].begin(), found);
-		libraryList[level][index] = std::move(LibraryInfo(name, type, url, "","" ));
-        emit SendMessage(QString("Updating '%1'").arg( name ), spdlog::level::level_enum::debug);
-	}
 }

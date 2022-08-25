@@ -2,7 +2,7 @@
 
 #include "./ui_mainwindow.h"
 
-#include "library_finder.h"
+#include "footprint_finder.h"
 #include "schematic_adder.h"
 #include "text_replace.h"
 
@@ -72,15 +72,15 @@ MainWindow::MainWindow(QWidget *parent)
 
 	settings = std::make_unique< QSettings>(appdir + "/settings.ini", QSettings::IniFormat);
 
-	library_finder = std::make_unique<LibraryFinder>();
-	connect( library_finder.get(), &LibraryFinder::SendMessage, this, &MainWindow::LogMessage );
-	connect( library_finder.get(), &LibraryFinder::AddLibrary, this, &MainWindow::AddLibrary );
-	connect( library_finder.get(), &LibraryFinder::ClearLibrary, this, &MainWindow::ClearLibrary );
-	connect( library_finder.get(), &LibraryFinder::SendResult, this, &MainWindow::AddFootPrintMsg );
-	connect( library_finder.get(), &LibraryFinder::ClearResults, this, &MainWindow::ClearFootPrintMsgs );
+	footprint_finder = std::make_unique<FootprintFinder>();
+	connect(footprint_finder.get(), &LibraryBase::SendMessage, this, &MainWindow::LogMessage );
+	connect(footprint_finder.get(), &LibraryBase::AddLibrary, this, &MainWindow::AddFootprintLibrary );
+	connect(footprint_finder.get(), &LibraryBase::ClearLibrary, this, &MainWindow::ClearFootprintLibrary );
+	connect(footprint_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddFootPrintMsg );
+	connect(footprint_finder.get(), &LibraryBase::ClearResults, this, &MainWindow::ClearFootPrintMsgs );
 
 	schematic_adder = std::make_unique<SchematicAdder>();
-	connect( schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
+	connect(schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
 	connect(schematic_adder.get(), &SchematicAdder::RedrawPartList, this, &MainWindow::RedrawPartList);
 	connect(schematic_adder.get(), &SchematicAdder::UpdatePartRow, this, &MainWindow::UpdatePartRow);
 
@@ -428,14 +428,14 @@ void MainWindow::on_pbReloadLibraries_clicked()
 		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
 		return;
 	}
-	ClearLibrarys();
-	library_finder->LoadProject(ui->leProjectFolder->text());
+	ClearFootprintLibrarys();
+	footprint_finder->LoadProject(ui->leProjectFolder->text());
 }
 
 void MainWindow::on_pbCheckFP_clicked()
 {
 	ClearFootPrintMsgs();
-	library_finder->CheckSchematics();
+	footprint_finder->CheckSchematics();
 }
 
 void MainWindow::on_pbFixFP_clicked()
@@ -446,7 +446,7 @@ void MainWindow::on_pbFixFP_clicked()
 		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
 		return;
 	}
-	library_finder->FixFootPrints(ui->leLibraryFolder->text());
+	footprint_finder->FixFootPrints(ui->leLibraryFolder->text());
 }
 
 void MainWindow::on_pbSetPartsInSch_clicked()
@@ -534,12 +534,12 @@ void MainWindow::on_lwFiles_itemDoubleClicked( QListWidgetItem * item)
 
 void MainWindow::on_twProjectLibraries_cellDoubleClicked(int row, int column)
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(library_finder->updatePath(ui->twProjectLibraries->item(row, 2)->text())));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(footprint_finder->updatePath(ui->twProjectLibraries->item(row, 2)->text())));
 }
 
 void MainWindow::on_twGlobalLibraries_cellDoubleClicked(int row, int column)
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(library_finder->updatePath(ui->twGlobalLibraries->item(row, 2)->text())));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(footprint_finder->updatePath(ui->twGlobalLibraries->item(row, 2)->text())));
 }
 
 void MainWindow::on_tabWidget_currentChanged(int index)
@@ -600,8 +600,8 @@ void MainWindow::SetProject(QString const& project)
 		item->setCheckState(Qt::Unchecked);
 	}
 
-	ClearLibrarys();
-	library_finder->LoadProject(proj.absoluteDir().absolutePath());
+	ClearFootprintLibrarys();
+	footprint_finder->LoadProject(proj.absoluteDir().absolutePath());
 	AddRecentList(proj.absoluteFilePath());
 }
 
@@ -778,7 +778,7 @@ void MainWindow::MoveRecursive(const std::filesystem::path& src, const std::file
 	}
 }
 
-void MainWindow::AddLibrary( QString const& level, QString const& name, QString const& type, QString const& path)
+void MainWindow::AddFootprintLibrary( QString const& level, QString const& name, QString const& type, QString const& path)
 {
 	QTableWidget* libraryList{nullptr};
 	if(PROJECT_LIB==level)
@@ -811,7 +811,7 @@ void MainWindow::AddLibrary( QString const& level, QString const& name, QString 
 	libraryList->resizeColumnsToContents();
 }
 
-void MainWindow::ClearLibrary(QString const& level)
+void MainWindow::ClearFootprintLibrary(QString const& level)
 {
 	if(PROJECT_LIB==level)
 	{
@@ -832,7 +832,7 @@ void MainWindow::ClearLibrary(QString const& level)
 	}
 }
 
-void MainWindow::ClearLibrarys()
+void MainWindow::ClearFootprintLibrarys()
 {
 	ui->twGlobalLibraries->clearContents();
 	while( ui->twGlobalLibraries->rowCount() != 0 )

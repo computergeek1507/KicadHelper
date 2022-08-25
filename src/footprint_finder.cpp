@@ -1,4 +1,4 @@
-#include "library_finder.h"
+#include "footprint_finder.h"
 
 #include "kicad_utils.h"
 
@@ -8,21 +8,12 @@
 #include <QFileInfo>
 #include <QCoreApplication>
 
-constexpr std::string_view PROJ_FOLDER = "${KIPRJMOD}";
-
-LibraryFinder::LibraryFinder()
+FootprintFinder::FootprintFinder()
 {
 
 }
-void LibraryFinder::LoadProject(QString const& folder)
-{
-    libraryList.clear();
-    m_projectFolder = folder;
-    getProjectLibraries();
-    getStockLibraries();
-}
 
-void LibraryFinder::getProjectLibraries()
+void FootprintFinder::getProjectLibraries()
 {
     QString localLibPath = m_projectFolder + "/fp-lib-table";
     if(QFile::exists(localLibPath))
@@ -31,7 +22,7 @@ void LibraryFinder::getProjectLibraries()
     }
 }
 
-void LibraryFinder::getStockLibraries()
+void FootprintFinder::getGlobalLibraries()
 {
     if(QFile::exists(getGlobalFootprintTablePath()))
     {
@@ -43,34 +34,9 @@ void LibraryFinder::getStockLibraries()
     }
 }
 
-void LibraryFinder::ParseLibraries(QString const& path, QString const& level)
-{
-	QFile inFile(path);
 
-	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
-	{
-		emit SendMessage(QString("Could not Open '%1'").arg(path), spdlog::level::level_enum::warn);
-		return;
-	}
-	QTextStream in(&inFile);
-	while (!in.atEnd())
-	{
-		QString line = in.readLine();
-        QString name = getLibParamter("name", line);
-        QString type = getLibParamter("type", line);
-        QString uri = getLibParamter("uri", line);
-        QString options = getLibParamter("options", line);
-        QString descr = getLibParamter("descr", line);
-        if(!name.isEmpty() && !type.isEmpty() && !uri.isEmpty() )
-        {
-            emit AddLibrary(level, name, type , uri);
-            libraryList[level].emplace_back(name, type, uri, options, descr);
-        }
-	}
-	inFile.close();
-}
 
-void LibraryFinder::SaveLibraryTable(QString const& fileName)
+void FootprintFinder::SaveLibraryTable(QString const& fileName)
 {
     QFile outFile(fileName);
     if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -90,7 +56,7 @@ void LibraryFinder::SaveLibraryTable(QString const& fileName)
     emit SendMessage(QString("Saved Library Table to '%1'").arg(outFile.fileName()), spdlog::level::level_enum::debug);
 }
 
-bool LibraryFinder::CheckSchematics()
+bool FootprintFinder::CheckSchematics()
 {
 	if (libraryList.empty())
 	{
@@ -118,7 +84,7 @@ bool LibraryFinder::CheckSchematics()
 	return true;
 }
 
-void LibraryFinder::CheckSchematic(QString const& schPath)
+void FootprintFinder::CheckSchematic(QString const& schPath)
 {
     QFileInfo fileData(schPath);
     QFile inFile(schPath);
@@ -178,7 +144,7 @@ void LibraryFinder::CheckSchematic(QString const& schPath)
     }
 }
 
-bool LibraryFinder::HasFootPrint(QString const& footprint) const
+bool FootprintFinder::HasFootPrint(QString const& footprint) const
 {
     if(!footprint.contains(":"))
     {
@@ -196,7 +162,7 @@ bool LibraryFinder::HasFootPrint(QString const& footprint) const
     return list.contains(parts[1]);
 }
 
-void LibraryFinder::CreateFootprintList()
+void FootprintFinder::CreateFootprintList()
 {
     footprintList.clear();
 
@@ -227,7 +193,7 @@ void LibraryFinder::CreateFootprintList()
     }
 }
 
-QStringList LibraryFinder::GetLegacyFootPrints(QString const& url) const
+QStringList FootprintFinder::GetLegacyFootPrints(QString const& url) const
 {
     QStringList list;
 
@@ -280,7 +246,7 @@ QStringList LibraryFinder::GetLegacyFootPrints(QString const& url) const
     return list;
 }
 
-QStringList LibraryFinder::GetKicadFootPrints(QString const& url) const
+QStringList FootprintFinder::GetKicadFootPrints(QString const& url) const
 {
     QStringList list;
 
@@ -301,65 +267,7 @@ QStringList LibraryFinder::GetKicadFootPrints(QString const& url) const
     return list;
 }
 
-QString LibraryFinder::updatePath(QString path) const
-{
-    path = path.replace("${KICAD6_FOOTPRINT_DIR}", getGlobalFootprintsPath() );
-    path = path.replace(PROJ_FOLDER.data(), m_projectFolder);
-    return path;
-}
-
-QString LibraryFinder::getGlobalFootprintsPath() const
-{
-    //C:\Program Files\KiCad\6.0\share\kicad\footprints
-
-#if defined( Q_OS_DARWIN )
-    return R"(kicad.app/Contents/SharedSupport/footprints)";
-#elif defined( Q_OS_WIN )
-//#ifdef _DEBUG
-    return R"(C:/Program Files/KiCad/6.0/share/kicad/footprints/)";
-//#else
-//    QFileInfo root( QCoreApplication::applicationDirPath() +  ( "../share/kicad/footprints/" ) );
-//    return root.absoluteFilePath();
-//#endif
-#else
-    return R"(/usr/share/kicad/footprints/)" ;
-#endif
-}
-
-QString LibraryFinder::getGlobalFootprintTablePath() const
-{
-#if defined( Q_OS_DARWIN )
-    return R"(kicad.app/Contents/SharedSupport/template/fp-lib-table)";
-#elif defined( Q_OS_WIN )
-//#ifdef _DEBUG
-    return R"(C:/Program Files/KiCad/6.0/share/kicad/template/fp-lib-table)";
-//#else
-//    QFileInfo root( QCoreApplication::applicationDirPath() +  ( "../share/kicad/template/fp-lib-table" ) );
-//    return root.absoluteFilePath();
-//#endif
-#else
-    return R"(/usr/share/kicad/template/fp-lib-table)" ;
-#endif
-    //C:\Program Files\KiCad\6.0\share\kicad\template\fp-lib-table
-}
-
-QString LibraryFinder::getLibParamter(QString const& parm, QString const& line ) const
-{
-    int stInd =  line.indexOf("(" + parm );
-    int endInd =  line.indexOf(")",stInd );
-
-    if(stInd == endInd || stInd ==-1 || endInd == -1)
-    {
-        return QString();
-    }
-    int nstr {stInd + parm.length() + 2};
-    QString value = line.mid(nstr, endInd - nstr);
-
-    value = kicad_utils::CleanQuotes(value);
-    return value;
-}
-
-QString LibraryFinder::getSchFootprint(QString const& line ) const
+QString FootprintFinder::getSchFootprint(QString const& line ) const
 {
     QString prop(R"((property "Footprint")");
     int stInd =  line.indexOf(prop );
@@ -381,7 +289,7 @@ QString LibraryFinder::getSchFootprint(QString const& line ) const
     return value;
 }
 
-QString LibraryFinder::getSchReference(QString const& line ) const
+QString FootprintFinder::getSchReference(QString const& line ) const
 {
     QString prop(R"((property "Reference")");
     int stInd =  line.indexOf(prop );
@@ -403,7 +311,7 @@ QString LibraryFinder::getSchReference(QString const& line ) const
     return value;
 }
 
-bool LibraryFinder::FixFootPrints(QString const& folder)
+bool FootprintFinder::FixFootPrints(QString const& folder)
 {
     bool worked{false};
     /*
@@ -451,7 +359,7 @@ bool LibraryFinder::FixFootPrints(QString const& folder)
     return worked;
 }
 
-bool LibraryFinder::AttemptToFindFootPrintPath(QString const& footprint, QString const& libraryPath )
+bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QString const& libraryPath )
 {
     if(!footprint.contains(":"))
     {
@@ -498,7 +406,7 @@ bool LibraryFinder::AttemptToFindFootPrintPath(QString const& footprint, QString
     return false;
 }
 
-bool LibraryFinder::ConvertAllPathsToRelative(QString const& libraryPath)
+bool FootprintFinder::ConvertAllPathsToRelative(QString const& libraryPath)
 {
     bool worked{false};
     for (auto & path : libraryList[PROJECT_LIB])
@@ -513,67 +421,7 @@ bool LibraryFinder::ConvertAllPathsToRelative(QString const& libraryPath)
     return worked;
 }
 
-QString LibraryFinder::ConvertToRelativePath(QString const& ogpath, QString const& libraryPath)
-{
-    //if already using macros, avoid
-    if(ogpath.startsWith("$"))
-    {
-        return ogpath;
-    }
-
-
-    auto path{ogpath};
-     //if its in a subfolder, easy to do find replace
-    if(path.startsWith(m_projectFolder))
-    {
-        path = path.replace(m_projectFolder, PROJ_FOLDER.data());
-        emit SendMessage(QString("Converted '%1' to '%2'").arg( ogpath ).arg(path), spdlog::level::level_enum::debug);
-        return path;
-    }
-
-    auto startProject{m_projectFolder};
-    auto startLibrary{libraryPath};
-
-    QString startLibRelative{QString(PROJ_FOLDER.data()) + "/"};//list of slashes going up the folder structure
-    QString folders;                        //list of folders  going down the folder structure
-
-    bool worked{false};
-    for(int i = 0; i < 255; ++i)//avoid infinite loops
-    {
-        int netProjSlash = startProject.lastIndexOf("/");
-        int netLibSlash = startLibrary.lastIndexOf("/");
-        if(-1 == netProjSlash || -1 == netLibSlash)
-        {
-            break;
-        }
-
-        QString const folder = startLibrary.right(startLibrary.size() - (netLibSlash + 1));
-        startLibRelative += "../";
-        folders += folder;
-        folders += "/";
-
-        //get next directory up the folder structure
-        startProject = startProject.left(netProjSlash);
-        startLibrary = startLibrary.left(netLibSlash);
-
-        //if commom, we are done
-        if(startLibrary.startsWith(startProject))
-        {
-            worked = true;
-            break;
-        }
-    }
-    if (worked)
-    {
-        QString newFolder = startLibRelative + folders;//added up and downs paths together
-        path = path.replace(libraryPath + "/", newFolder);
-        emit SendMessage(QString("Converted '%1' to '%2'").arg( ogpath ).arg(path), spdlog::level::level_enum::debug);
-        return path;
-    }
-    return path;
-}
-
-void LibraryFinder::AddLibraryPath(QString name, QString type, QString url, QString const& level)
+void FootprintFinder::AddLibraryPath(QString name, QString type, QString url, QString const& level)
 {
     if (auto const found { 
             std::find_if(libraryList[level].begin(), libraryList[level].end(), [&](auto const & elem)
@@ -590,59 +438,4 @@ void LibraryFinder::AddLibraryPath(QString name, QString type, QString url, QStr
 		libraryList[level][index] = std::move(LibraryInfo(name, type, url, "","" ));
         emit SendMessage(QString("Updating '%1'").arg( name ), spdlog::level::level_enum::debug);
 	}
-}
-
-QString LibraryFinder::FindRecurseDirectory(const QString& startDir, const QString& dirName) const
-{
-	QDir dir(startDir);
-	QFileInfoList list = dir.entryInfoList();
-	for (int iList=0;iList<list.count();iList++)
-	{
-		QFileInfo info = list[iList];
- 
-		QString sFilePath = info.filePath();
-		if (info.isDir())
-		{
-            if( info.completeBaseName().compare(dirName) == 0)
-            {
-                return info.filePath();
-            }
-			// recursive
-			if (info.fileName()!=".." && info.fileName()!=".")
-			{
-                auto const& path{FindRecurseDirectory(sFilePath, dirName)};
-                if(!path.isEmpty())
-                {
-                    return path;
-                }
-			}
-		}
-	}
-    return QString();
-}
-
-QString LibraryFinder::FindRecurseFile(const QString& startDir, const QStringList& fileNames) const
-{
-	QDir dir(startDir);
-	dir.setNameFilters(fileNames);
-    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-
-    auto const& fileList { dir.entryInfoList()};
-    if(fileList.count()>0)
-    {
-        return fileList[0].filePath();
-    }
-
-    dir.setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-    QStringList dirList = dir.entryList();
-    for (int i=0; i<dirList.size(); ++i)
-    {
-        QString newPath = QString("%1/%2").arg(dir.absolutePath()).arg(dirList.at(i));
-        QString path{FindRecurseFile(newPath, fileNames)};
-        if(!path.isEmpty())
-        {
-            return path;
-        }
-    }
-    return QString();
 }

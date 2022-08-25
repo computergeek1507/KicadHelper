@@ -18,7 +18,7 @@ class QListWidgetItem;
 class QSettings;
 QT_END_NAMESPACE
 
-class LibraryFinder;
+class FootprintFinder;
 class SchematicAdder;
 class TextReplace;
 struct Mapping;
@@ -85,9 +85,9 @@ public Q_SLOTS:
 
     void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 
-    void AddLibrary(QString const& level, QString const& name, QString const& type, QString const& path);
-    void ClearLibrary(QString const& level);
-    void ClearLibrarys();
+    void AddFootprintLibrary(QString const& level, QString const& name, QString const& type, QString const& path);
+    void ClearFootprintLibrary(QString const& level);
+    void ClearFootprintLibrarys();
 
     void AddFootPrintMsg( QString const& message, bool error);
     void ClearFootPrintMsgs();
@@ -107,7 +107,7 @@ private:
 
     std::shared_ptr<spdlog::logger> logger{ nullptr };
     std::unique_ptr<QSettings> settings{ nullptr };
-    std::unique_ptr<LibraryFinder> library_finder{ nullptr };
+    std::unique_ptr<FootprintFinder> footprint_finder{ nullptr };
     std::unique_ptr<SchematicAdder> schematic_adder{ nullptr };
     std::unique_ptr<TextReplace> text_replace{ nullptr };
 

@@ -134,7 +134,7 @@ void LibraryBase::ChangeLibraryName(QString const& oldName, QString const& newNa
     {
         auto index = std::distance(libraryList[PROJECT_LIB].begin(), found);
         libraryList[PROJECT_LIB][index].name = newName;
-        emit UpdateLibraryRow(PROJECT_LIB, libraryList[PROJECT_LIB][index].name,
+        emit SendUpdateLibraryRow(PROJECT_LIB, libraryList[PROJECT_LIB][index].name,
             libraryList[PROJECT_LIB][index].type, libraryList[PROJECT_LIB][index].descr,
             libraryList[PROJECT_LIB][index].url, row);
         SaveLibraryTable(getProjectLibraryPath());
@@ -151,11 +151,57 @@ void LibraryBase::ChangeLibraryPath(QString const& name, QString const& newPath,
     {
         auto index = std::distance(libraryList[PROJECT_LIB].begin(), found);
         libraryList[PROJECT_LIB][index].url = newPath;
-        emit UpdateLibraryRow(PROJECT_LIB, libraryList[PROJECT_LIB][index].name,
+        emit SendUpdateLibraryRow(PROJECT_LIB, libraryList[PROJECT_LIB][index].name,
             libraryList[PROJECT_LIB][index].type, libraryList[PROJECT_LIB][index].descr,
             libraryList[PROJECT_LIB][index].url, row);
         SaveLibraryTable(getProjectLibraryPath());
     }
+}
+
+void LibraryBase::ChangeLibraryDescr(QString const& name, QString const& newDescr, int row)
+{
+    if (auto const found{
+            std::find_if(libraryList[PROJECT_LIB].begin(), libraryList[PROJECT_LIB].end(), [&](auto const& elem)
+            { return elem.name == name; })
+        };
+        found != libraryList[PROJECT_LIB].end())
+    {
+        auto index = std::distance(libraryList[PROJECT_LIB].begin(), found);
+        libraryList[PROJECT_LIB][index].descr = newDescr;
+        emit SendUpdateLibraryRow(PROJECT_LIB, libraryList[PROJECT_LIB][index].name,
+            libraryList[PROJECT_LIB][index].type, libraryList[PROJECT_LIB][index].descr,
+            libraryList[PROJECT_LIB][index].url, row);
+        SaveLibraryTable(getProjectLibraryPath());
+    }
+}
+
+void LibraryBase::RemoveLibrary(QString const& name)
+{
+     if (auto const found{
+            std::find_if(libraryList[PROJECT_LIB].begin(), libraryList[PROJECT_LIB].end(), [&](auto const& elem)
+            { return elem.name == name; })
+        };
+        found != libraryList[PROJECT_LIB].end())
+    {
+        libraryList[PROJECT_LIB].erase(found);
+
+        SaveLibraryTable(getProjectLibraryPath());
+        emit SendClearLibrary(PROJECT_LIB);
+        libraryList[PROJECT_LIB].clear();
+        getProjectLibraries();
+    }
+}
+
+void LibraryBase::ImportLibrary(QString const& path, QString const& libFolder)
+{
+    auto lib {DecodeLibraryInfo(path, libFolder)};
+
+    AddLibraryPath( lib.name, lib.type, lib.url, PROJECT_LIB);
+
+    SaveLibraryTable(getProjectLibraryPath());
+    emit SendClearLibrary(PROJECT_LIB);
+    libraryList[PROJECT_LIB].clear();
+    getProjectLibraries();
 }
 
 void LibraryBase::ParseLibraries(QString const& path, QString const& level)
@@ -178,7 +224,7 @@ void LibraryBase::ParseLibraries(QString const& path, QString const& level)
         QString descr = getLibParamter("descr", line);
         if (!name.isEmpty() && !type.isEmpty() && !uri.isEmpty())
         {
-            emit AddLibrary(level, name, type, descr, uri);
+            emit SendAddLibrary(level, name, type, descr, uri);
             libraryList[level].emplace_back(name, type, uri, options, descr);
         }
     }
@@ -289,10 +335,15 @@ QString LibraryBase::getLibParamter(QString const& parm, QString const& line ) c
     return value;
 }
 
-QString LibraryBase::ConvertToRelativePath(QString const& ogpath, QString const& libraryPath)
+QString LibraryBase::ConvertToRelativePath(QString const& ogpath, QString const& libraryPath) const
 {
     //if already using macros, avoid
     if(ogpath.startsWith("$"))
+    {
+        return ogpath;
+    }
+
+    if(libraryPath.isEmpty())
     {
         return ogpath;
     }

@@ -27,6 +27,8 @@ private:
 	QString getProjectLibraryPath() const override;
 	QString getGlobalLibraryPath() const override;
 
+	LibraryInfo DecodeLibraryInfo(QString const& path, QString const& libFolder) const override;
+
 	void CheckSchematic(QString const& schPath);
 	void CreateFootprintList();
 

@@ -29,16 +29,20 @@ public:
 
 	virtual void ChangeLibraryName(QString const& oldName, QString const& newName, int row);
 	virtual void ChangeLibraryPath(QString const& name, QString const& newPath, int row);
+	virtual void ChangeLibraryDescr(QString const& name, QString const& newDescr, int row);
+	virtual void RemoveLibrary(QString const& name);
+	virtual void ImportLibrary(QString const& path, QString const& libFolder);
+
 Q_SIGNALS:
 	void SendMessage( QString const& message,  spdlog::level::level_enum llvl, QString const& file) const;
 
-	void AddLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path) const;
-	void ClearLibrary(QString const& level) const;
+	void SendAddLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path) const;
+	void SendClearLibrary(QString const& level) const;
 
-	void UpdateLibraryRow(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path, int row) const;
+	void SendUpdateLibraryRow(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path, int row) const;
 
 	void SendResult(QString const& message, bool error) const;
-	void ClearResults() const;
+	void SendClearResults() const;
 
 protected:
 	void ParseLibraries(QString const& path, QString const& level);
@@ -48,6 +52,8 @@ protected:
 
 	void getProjectLibraries();
 	void getGlobalLibraries();
+
+	virtual LibraryInfo DecodeLibraryInfo(QString const& path, QString const& libFolder) const = 0;
 
 	QString getGlobalKicadDataPath() const;
 	QString getGlobalTemplatePath() const;
@@ -60,7 +66,7 @@ protected:
 	QString FindRecurseFile(const QString& startDir, const QStringList& fileName) const;
 	QStringList FindRecurseFiles(const QString& startDir, const QStringList& fileNames) const;
 
-	QString ConvertToRelativePath(QString const& ogpath, QString const& libraryPath);
+	QString ConvertToRelativePath(QString const& ogpath, QString const& libraryPath) const;
 
 	QString getSchSymbol(QString const& line ) const;
 	QString getSchFootprint(QString const& line ) const;

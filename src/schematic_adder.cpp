@@ -266,6 +266,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 			lastID = -1;
 			lastLoc = "";
 			lastRef = "";
+			lastValue = "";
 		}
 		newlines.push_back(outLine);
 	}

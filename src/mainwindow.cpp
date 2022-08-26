@@ -80,19 +80,19 @@ MainWindow::MainWindow(QWidget *parent)
 
 	footprint_finder = std::make_unique<FootprintFinder>();
 	connect(footprint_finder.get(), &LibraryBase::SendMessage, this, &MainWindow::LogMessage );
-	connect(footprint_finder.get(), &LibraryBase::AddLibrary, this, &MainWindow::AddFootprintLibrary );
-	connect(footprint_finder.get(), &LibraryBase::ClearLibrary, this, &MainWindow::ClearFootprintLibrary );
-	connect(footprint_finder.get(), &LibraryBase::UpdateLibraryRow, this, &MainWindow::UpdateFootprintLibraryRow);
+	connect(footprint_finder.get(), &LibraryBase::SendAddLibrary, this, &MainWindow::AddFootprintLibrary );
+	connect(footprint_finder.get(), &LibraryBase::SendClearLibrary, this, &MainWindow::ClearFootprintLibrary );
+	connect(footprint_finder.get(), &LibraryBase::SendUpdateLibraryRow, this, &MainWindow::UpdateFootprintLibraryRow);
 	connect(footprint_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddFootprintMsg );
-	connect(footprint_finder.get(), &LibraryBase::ClearResults, this, &MainWindow::ClearFootprintMsgs );
+	connect(footprint_finder.get(), &LibraryBase::SendClearResults, this, &MainWindow::ClearFootprintMsgs );
 
 	symbol_finder = std::make_unique<SymbolFinder>();
 	connect(symbol_finder.get(), &LibraryBase::SendMessage, this, &MainWindow::LogMessage );
-	connect(symbol_finder.get(), &LibraryBase::AddLibrary, this, &MainWindow::AddSymbolLibrary );
-	connect(symbol_finder.get(), &LibraryBase::ClearLibrary, this, &MainWindow::ClearSymbolLibrary );
-	connect(symbol_finder.get(), &LibraryBase::UpdateLibraryRow, this, &MainWindow::UpdateSymbolLibraryRow);
+	connect(symbol_finder.get(), &LibraryBase::SendAddLibrary, this, &MainWindow::AddSymbolLibrary );
+	connect(symbol_finder.get(), &LibraryBase::SendClearLibrary, this, &MainWindow::ClearSymbolLibrary );
+	connect(symbol_finder.get(), &LibraryBase::SendUpdateLibraryRow, this, &MainWindow::UpdateSymbolLibraryRow);
 	connect(symbol_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddSymbolMsg );
-	connect(symbol_finder.get(), &LibraryBase::ClearResults, this, &MainWindow::ClearSymbolMsgs );
+	connect(symbol_finder.get(), &LibraryBase::SendClearResults, this, &MainWindow::ClearSymbolMsgs );
 
 	schematic_adder = std::make_unique<SchematicAdder>();
 	connect(schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
@@ -498,12 +498,19 @@ void MainWindow::on_pbAddFpLibrary_clicked()
 	QString const footprintLib = QFileDialog::getOpenFileName(this, "Select Kicad Footprint Library Files", ui->leLibraryFolder->text(), tr("Kicad Footprint Librarys (*.kicad_mod *.mod);;All Files (*.*)"));
 	if (!footprintLib.isEmpty())
 	{
+		footprint_finder->ImportLibrary(footprintLib, ui->leLibraryFolder->text() );
 	}
 }
 
 void MainWindow::on_pbDeleteFpLibrary_clicked()
 {
-
+	int row = GetSelectedRow(ui->twProjectFPLibraries);
+	if (-1 == row)
+	{
+		return;
+	}
+	auto name{ ui->twProjectFPLibraries->item(row, LibraryColumns::Name)->text()};
+	footprint_finder->RemoveLibrary(name);
 }
 
 void MainWindow::on_pbViewFpLibrary_clicked()
@@ -534,12 +541,19 @@ void MainWindow::on_pbAddSymLibrary_clicked()
 	QString const symbolLib = QFileDialog::getOpenFileName(this, "Select Kicad Symbol Library Files", ui->leLibraryFolder->text(), tr("Kicad Symbol Librarys (*.kicad_sym *.lib);;All Files (*.*)"));
 	if (!symbolLib.isEmpty())
 	{
+		symbol_finder->ImportLibrary(symbolLib, ui->leLibraryFolder->text());
 	}
 }
 
 void MainWindow::on_pbDeleteSymLibrary_clicked()
 {
-
+	int row = GetSelectedRow(ui->twProjectSymLibraries);
+	if (-1 == row)
+	{
+		return;
+	}
+	auto name{ ui->twProjectSymLibraries->item(row, LibraryColumns::Name)->text()};
+	symbol_finder->RemoveLibrary(name);
 }
 
 void MainWindow::on_pbViewSymLibrary_clicked()
@@ -668,7 +682,7 @@ void MainWindow::on_twProjectFPLibraries_cellDoubleClicked(int row, int column)
 	else if (column == LibraryColumns::Name)
 	{		
 		auto value{ ui->twProjectFPLibraries->item(row, LibraryColumns::Name)->text() };
-		auto type{ ui->twProjectFPLibraries->item(row, LibraryColumns::Type)->text() };
+		//auto type{ ui->twProjectFPLibraries->item(row, LibraryColumns::Type)->text() };
 
 		bool ok;
 		QString text = QInputDialog::getText(this, header,
@@ -677,6 +691,20 @@ void MainWindow::on_twProjectFPLibraries_cellDoubleClicked(int row, int column)
 		if (ok && !text.isEmpty() && value != text)
 		{
 			footprint_finder->ChangeLibraryName(value, text, row);
+		}
+	}
+	else if (column == LibraryColumns::Descr)
+	{		
+		auto name{ ui->twProjectFPLibraries->item(row, LibraryColumns::Name)->text() };
+		auto value{ ui->twProjectFPLibraries->item(row, LibraryColumns::Descr)->text() };
+
+		bool ok;
+		QString text = QInputDialog::getText(this, header,
+			header, QLineEdit::Normal,
+			value, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			footprint_finder->ChangeLibraryDescr(name, text, row);
 		}
 	}
 }
@@ -688,10 +716,12 @@ void MainWindow::on_twGlobalFPLibraries_cellDoubleClicked(int row, int column)
 		auto path = QFileInfo(footprint_finder->updatePath(ui->twGlobalFPLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
 		QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 	}
-	//else if (column == LibraryColumns::Name)
-	//{
-	//
-	//}
+	else if (column == LibraryColumns::Name)
+	{
+		auto list{ footprint_finder->GetFootprints(ui->twGlobalFPLibraries->item(row, LibraryColumns::URL)->text(),
+								ui->twGlobalFPLibraries->item(row, LibraryColumns::Type)->text()) };
+		ViewList::Load(list, ui->twGlobalFPLibraries->item(row, LibraryColumns::Name)->text());
+	}
 }
 
 void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
@@ -725,6 +755,20 @@ void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
 			symbol_finder->ChangeLibraryName(value, text, row);
 		}
 	}
+	else if (column == LibraryColumns::Descr)
+	{		
+		auto name{ ui->twProjectSymLibraries->item(row, LibraryColumns::Name)->text() };
+		auto value{ ui->twProjectSymLibraries->item(row, LibraryColumns::Descr)->text() };
+
+		bool ok;
+		QString text = QInputDialog::getText(this, header,
+			header, QLineEdit::Normal,
+			value, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			symbol_finder->ChangeLibraryDescr(name, text, row);
+		}
+	}
 }
 
 void MainWindow::on_twGlobalSymLibraries_cellDoubleClicked(int row, int column)
@@ -734,10 +778,12 @@ void MainWindow::on_twGlobalSymLibraries_cellDoubleClicked(int row, int column)
 		auto path = QFileInfo(symbol_finder->updatePath(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
 		QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 	}
-	//else if (column == LibraryColumns::Name)
-	//{
-	//
-	//}
+	else if (column == LibraryColumns::Name)
+	{
+		auto list{ symbol_finder->GetSymbols(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text(),
+									ui->twGlobalSymLibraries->item(row, LibraryColumns::Type)->text()) };
+			ViewList::Load(list, ui->twGlobalSymLibraries->item(row, LibraryColumns::Name)->text());
+	}
 }
 
 void MainWindow::on_tabWidget_currentChanged(int index)

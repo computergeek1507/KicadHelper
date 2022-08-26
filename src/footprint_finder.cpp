@@ -20,7 +20,7 @@ QString FootprintFinder::getProjectLibraryPath() const
 
 QString FootprintFinder::getGlobalLibraryPath() const
 {
-    return getGlobalSymbolTablePath();
+    return getGlobalFootprintTablePath();
 }
 
 void FootprintFinder::SaveLibraryTable(QString const& fileName)
@@ -191,6 +191,7 @@ QStringList FootprintFinder::GetLegacyFootprints(QString const& url) const
 
     if(!inFile.exists())
     {
+        emit SendMessage(QString("'%1' doesnt' Exist").arg(fullPath), spdlog::level::level_enum::warn, "");
         return list;
     }
 
@@ -242,6 +243,7 @@ QStringList FootprintFinder::GetKicadFootprints(QString const& url) const
     QDir directory(fullPath);
     if(!directory.exists())
     {
+        emit SendMessage(QString("'%1' doesnt' Exist").arg(fullPath), spdlog::level::level_enum::warn, "");
         return list;
     }
 
@@ -273,10 +275,10 @@ bool FootprintFinder::FixFootprints(QString const& folder)
         QString localLibPath {m_projectFolder + "/fp-lib-table"};
         SaveLibraryTable(localLibPath);
 
-        emit ClearLibrary(PROJECT_LIB);
+        emit SendClearLibrary(PROJECT_LIB);
         libraryList[PROJECT_LIB].clear();
         getProjectLibraries();
-        emit ClearResults();
+        emit SendClearResults();
         CheckSchematics();
     }
 
@@ -292,10 +294,10 @@ bool FootprintFinder::FixFootprints(QString const& folder)
         QString localLibPath {m_projectFolder + "/fp-lib-table"};
         SaveLibraryTable(localLibPath);
 
-        emit ClearLibrary(PROJECT_LIB);
+        emit SendClearLibrary(PROJECT_LIB);
         libraryList[PROJECT_LIB].clear();
         getProjectLibraries();
-        emit ClearResults();
+        emit SendClearResults();
         CheckSchematics();
     }
 
@@ -401,4 +403,29 @@ QStringList FootprintFinder::GetFootprints(QString const& url, QString const& ty
         return GetKicadFootprints(url);
     }
     return QStringList();
+}
+
+LibraryInfo FootprintFinder::DecodeLibraryInfo(QString const& path, QString const& libFolder) const
+{
+    LibraryInfo info;
+    QFileInfo file(path);
+    if("mod"== file.suffix().toLower() )
+    {
+        //info.name = file.baseName();
+        info.name = file.dir().dirName();
+        info.type = LEGACY_LIB;
+        info.url = ConvertToRelativePath(file.absoluteFilePath(), libFolder);
+    }
+    else if("kicad_mod"== file.suffix().toLower() )
+    {
+        //info.name = file.dir().dirName();
+        //info.name = file.dir().dirName();
+        //info.name = info.name.replace(".pretty","");
+        QDir dir(file.dir().absolutePath());
+        dir.cdUp();
+        info.name = dir.dirName();
+        info.url = ConvertToRelativePath(file.dir().absolutePath(), libFolder);
+        info.type = KICAD_LIB;
+    }
+    return info;
 }

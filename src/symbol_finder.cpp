@@ -206,6 +206,7 @@ QStringList SymbolFinder::GetLegacySymbols(QString const& url) const
 
     if(!inFile.exists())
     {
+        emit SendMessage(QString("'%1' doesnt' Exist").arg(fullPath), spdlog::level::level_enum::warn, "");
         return list;
     }
 
@@ -259,6 +260,7 @@ QStringList SymbolFinder::GetKicadSymbols(QString const& url) const
 
     if(!inFile.exists())
     {
+        emit SendMessage(QString("'%1' doesnt' Exist").arg(fullPath), spdlog::level::level_enum::warn, "");
         return list;
     }
 
@@ -302,10 +304,10 @@ bool SymbolFinder::FixSymbols(QString const& folder)
     {
         SaveLibraryTable(getProjectLibraryPath());
 
-        emit ClearLibrary(PROJECT_LIB);
+        emit SendClearLibrary(PROJECT_LIB);
         libraryList[PROJECT_LIB].clear();
         getProjectLibraries();
-        emit ClearResults();
+        emit SendClearResults();
         CheckSchematics();
     }
 
@@ -320,10 +322,10 @@ bool SymbolFinder::FixSymbols(QString const& folder)
     {
         SaveLibraryTable(getProjectLibraryPath());
 
-        emit ClearLibrary(PROJECT_LIB);
+        emit SendClearLibrary(PROJECT_LIB);
         libraryList[PROJECT_LIB].clear();
         getProjectLibraries();
-        emit ClearResults();
+        emit SendClearResults();
         CheckSchematics();
     }
 
@@ -439,4 +441,21 @@ QStringList SymbolFinder::GetSymbols(QString const& url, QString const& type) co
     return QStringList();
 }
 
+LibraryInfo SymbolFinder::DecodeLibraryInfo(QString const& path, QString const& libFolder) const
+{
+    LibraryInfo info;
+    QFileInfo file(path);
+    //info.name = file.baseName();
+    info.name = file.dir().dirName();
+    info.url = ConvertToRelativePath(file.absoluteFilePath(), libFolder);
+    if("lib"== file.suffix().toLower() )
+    {
+        info.type = LEGACY_LIB;
+    }
+    else if("kicad_sym"== file.suffix().toLower() )
+    {
+        info.type = KICAD_LIB;
+    }
+    return info;
+}
 

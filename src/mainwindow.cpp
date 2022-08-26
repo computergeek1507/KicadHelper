@@ -264,8 +264,10 @@ void MainWindow::on_actionAbout_triggered()
 {
 	auto hpp {helpText.right(helpText.size() - helpText.indexOf("Options:"))};
 	QString text {QString("Kicad Helper v%1\nQT v%2\n\n\n%3\n\nIcons by:\n%4")
-		.arg(PROJECT_VER).arg(QT_VERSION_STR).arg(hpp).arg(R"(http://www.famfamfam.com/lab/icons/silk/)")};
-	//http://www.famfamfam.com/lab/icons/silk/
+		.arg(PROJECT_VER).arg(QT_VERSION_STR)
+		.arg(hpp)
+		.arg(R"(http://www.famfamfam.com/lab/icons/silk/)")};
+		//http://www.famfamfam.com/lab/icons/silk/
 	QMessageBox::about( this, "About Kicad Helper", text );
 }
 

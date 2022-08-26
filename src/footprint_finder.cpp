@@ -191,7 +191,7 @@ QStringList FootprintFinder::GetLegacyFootprints(QString const& url) const
 
     if(!inFile.exists())
     {
-        emit SendMessage(QString("'%1' doesnt' Exist").arg(fullPath), spdlog::level::level_enum::warn, "");
+        emit SendResult(QString("'%1' doesnt' exist").arg(fullPath), true);
         return list;
     }
 
@@ -243,7 +243,7 @@ QStringList FootprintFinder::GetKicadFootprints(QString const& url) const
     QDir directory(fullPath);
     if(!directory.exists())
     {
-        emit SendMessage(QString("'%1' doesnt' Exist").arg(fullPath), spdlog::level::level_enum::warn, "");
+        emit SendResult(QString("'%1' doesnt' exist").arg(fullPath), true);
         return list;
     }
 

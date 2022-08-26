@@ -206,7 +206,7 @@ QStringList SymbolFinder::GetLegacySymbols(QString const& url) const
 
     if(!inFile.exists())
     {
-        emit SendMessage(QString("'%1' doesnt' Exist").arg(fullPath), spdlog::level::level_enum::warn, "");
+        emit SendResult(QString("'%1' doesnt' exist").arg(fullPath), true);
         return list;
     }
 
@@ -260,7 +260,7 @@ QStringList SymbolFinder::GetKicadSymbols(QString const& url) const
 
     if(!inFile.exists())
     {
-        emit SendMessage(QString("'%1' doesnt' Exist").arg(fullPath), spdlog::level::level_enum::warn, "");
+        emit SendResult(QString("'%1' doesnt' exist").arg(fullPath), true);
         return list;
     }
 

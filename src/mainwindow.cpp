@@ -58,8 +58,6 @@ MainWindow::MainWindow(QWidget *parent)
 	{
 		auto file{ std::string(logdir.toStdString() + log_name) };
 		auto rotating = std::make_shared<spdlog::sinks::rotating_file_sink_mt>( file, 1024 * 1024, 5, false);
-		//rotating->set_level(spdlog::level::debug);
-		//rotating->flush
 
 		logger = std::make_shared<spdlog::logger>("kicadhelper", rotating);
 		logger->flush_on(spdlog::level::debug);
@@ -265,7 +263,8 @@ void MainWindow::on_actionClose_triggered()
 void MainWindow::on_actionAbout_triggered()
 {
 	auto hpp {helpText.right(helpText.size() - helpText.indexOf("Options:"))};
-	QString text {QString("Kicad Helper v%1\nQT v%2\n\n\n%3").arg(PROJECT_VER).arg(QT_VERSION_STR).arg(hpp)};
+	QString text {QString("Kicad Helper v%1\nQT v%2\n\n\n%3\n\nIcons by:\n%4")
+		.arg(PROJECT_VER).arg(QT_VERSION_STR).arg(hpp).arg(R"(http://www.famfamfam.com/lab/icons/silk/)")};
 	//http://www.famfamfam.com/lab/icons/silk/
 	QMessageBox::about( this, "About Kicad Helper", text );
 }
@@ -881,7 +880,7 @@ void MainWindow::RedrawPartList(bool save)
 		ui->twParts->item(row, col)->setText(text);
 	};
 	ui->twParts->clearContents();
-	ui->twParts->setRowCount(schematic_adder->getPartList().size());
+	ui->twParts->setRowCount(static_cast<int>(schematic_adder->getPartList().size()));
 	int row{ 0 };
 
 	for (auto const& line : schematic_adder->getPartList())
@@ -909,9 +908,8 @@ void MainWindow::RedrawMappingList(bool save)
 		ui->lwWords->item(row, col)->setText(text);
 	};
 	ui->lwWords->clearContents();
-	//ui->lwWords->clear();
 
-	ui->lwWords->setRowCount(text_replace->getReplaceList().size());
+	ui->lwWords->setRowCount(static_cast<int>(text_replace->getReplaceList().size()));
 
 	int rowIdx{ 0 };
 	for (auto const& map : text_replace->getReplaceList())
@@ -1275,7 +1273,7 @@ void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum ll
 	msgColors.append(Qt::darkBlue);
 	msgColors.append(Qt::blue);
 	msgColors.append(Qt::darkGreen);
-	msgColors.append(Qt::darkYellow);
+	msgColors.append("#DC582A");
 	msgColors.append(Qt::darkRed);
 	msgColors.append(Qt::red);
 

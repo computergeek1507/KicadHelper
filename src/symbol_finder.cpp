@@ -14,25 +14,14 @@ SymbolFinder::SymbolFinder()
 
 }
 
-void SymbolFinder::getProjectLibraries()
+QString SymbolFinder::getProjectLibraryPath() const
 {
-    QString localLibPath = m_projectFolder + "/sym-lib-table";
-    if(QFile::exists(localLibPath))
-    {
-        ParseLibraries(localLibPath, PROJECT_LIB);
-    }
+   return m_projectFolder + "/sym-lib-table";
 }
 
-void SymbolFinder::getGlobalLibraries()
+QString SymbolFinder::getGlobalLibraryPath() const
 {
-    if(QFile::exists(getGlobalSymbolTablePath()))
-    {
-        ParseLibraries(getGlobalSymbolTablePath(), GLOBAL_LIB);
-    }
-    else
-    {
-        emit SendMessage(QString("Could not Open '%1'").arg(getGlobalSymbolTablePath()), spdlog::level::level_enum::warn, getGlobalSymbolTablePath());
-    }
+    return getGlobalSymbolTablePath();
 }
 
 void SymbolFinder::SaveLibraryTable(QString const& fileName)
@@ -114,7 +103,7 @@ void SymbolFinder::CheckSchematic(QString const& schPath)
 		{
 			continue;
 		}
-        QString s = getSchSymbol( line);
+        QString s = getSchSymbol(line);
         if(!s.isEmpty())
         {
             symbol = s;
@@ -189,11 +178,11 @@ void SymbolFinder::CreateSymbolList()
                 continue;
             }
             QStringList fps;
-            if(lib.type == "Legacy")
+            if(lib.type == LEGACY_LIB)
             {
                 fps = GetLegacySymbols(lib.url);
             }
-            else if(lib.type == "KiCad")
+            else if(lib.type == KICAD_LIB)
             {
                 fps = GetKicadSymbols(lib.url);
             }
@@ -311,8 +300,7 @@ bool SymbolFinder::FixSymbols(QString const& folder)
 
     if(ConvertAllPathsToRelative(folder))
     {
-        QString localLibPath {m_projectFolder + "/sym-lib-table"};
-        SaveLibraryTable(localLibPath);
+        SaveLibraryTable(getProjectLibraryPath());
 
         emit ClearLibrary(PROJECT_LIB);
         libraryList[PROJECT_LIB].clear();
@@ -330,8 +318,7 @@ bool SymbolFinder::FixSymbols(QString const& folder)
     }
     if(worked)
     {
-        QString localLibPath {m_projectFolder + "/sym-lib-table"};
-        SaveLibraryTable(localLibPath);
+        SaveLibraryTable(getProjectLibraryPath());
 
         emit ClearLibrary(PROJECT_LIB);
         libraryList[PROJECT_LIB].clear();
@@ -376,7 +363,7 @@ bool SymbolFinder::AttemptToFindSymbolPath(QString const& footprint, QString con
                 auto newPath{ConvertToRelativePath(FoundKicdLibPath,libraryPath )};
 
                 emit SendMessage(QString("Found '%1' symbol in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, FoundKicdLibPath);
-                AddLibraryPath(parts[0],"KiCad", newPath, PROJECT_LIB);
+                AddLibraryPath(parts[0], KICAD_LIB, newPath, PROJECT_LIB);
                 return true;
             }
         }
@@ -393,7 +380,7 @@ bool SymbolFinder::AttemptToFindSymbolPath(QString const& footprint, QString con
                 //add to library file
                 auto newPath{ConvertToRelativePath(FoundKicdLibPath,libraryPath)};
                 emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, FoundKicdLibPath);
-                AddLibraryPath(parts[0],"Legacy", newPath,PROJECT_LIB);
+                AddLibraryPath(parts[0], LEGACY_LIB, newPath,PROJECT_LIB);
                 return true;
             }
         }
@@ -413,7 +400,7 @@ bool SymbolFinder::AttemptToFindSymbolPath(QString const& footprint, QString con
             auto newPath{ConvertToRelativePath(FoundKicdLibPath, libraryPath)};
 
             emit SendMessage(QString("Found '%1' symbol in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, FoundKicdLibPath);
-            AddLibraryPath(parts[0],"KiCad", newPath, PROJECT_LIB);
+            AddLibraryPath(parts[0], KICAD_LIB, newPath, PROJECT_LIB);
             return true;
         }
     }
@@ -431,12 +418,25 @@ bool SymbolFinder::AttemptToFindSymbolPath(QString const& footprint, QString con
             //add to library file
             auto newPath{ConvertToRelativePath(FoundKicdLibPath,libraryPath)};
             emit SendMessage(QString("Found '%1' symbol in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, FoundKicdLibPath);
-            AddLibraryPath(parts[0],"Legacy", newPath,PROJECT_LIB);
+            AddLibraryPath(parts[0], LEGACY_LIB, newPath,PROJECT_LIB);
             return true;
         }
     }
     
     return false;
+}
+
+QStringList SymbolFinder::GetSymbols(QString const& url, QString const& type) const 
+{
+    if (type == LEGACY_LIB)
+    {
+        return GetLegacySymbols(url);
+    }
+    else if (type == KICAD_LIB)
+    {
+        return GetKicadSymbols(url);
+    }
+    return QStringList();
 }
 
 

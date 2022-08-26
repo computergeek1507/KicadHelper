@@ -9,6 +9,7 @@
 
 #include "addpartnumber.h"
 #include "addmapping.h"
+#include "viewlist.h"
 
 #include "mapping.h"
 
@@ -81,6 +82,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(footprint_finder.get(), &LibraryBase::SendMessage, this, &MainWindow::LogMessage );
 	connect(footprint_finder.get(), &LibraryBase::AddLibrary, this, &MainWindow::AddFootprintLibrary );
 	connect(footprint_finder.get(), &LibraryBase::ClearLibrary, this, &MainWindow::ClearFootprintLibrary );
+	connect(footprint_finder.get(), &LibraryBase::UpdateLibraryRow, this, &MainWindow::UpdateFootprintLibraryRow);
 	connect(footprint_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddFootprintMsg );
 	connect(footprint_finder.get(), &LibraryBase::ClearResults, this, &MainWindow::ClearFootprintMsgs );
 
@@ -88,6 +90,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(symbol_finder.get(), &LibraryBase::SendMessage, this, &MainWindow::LogMessage );
 	connect(symbol_finder.get(), &LibraryBase::AddLibrary, this, &MainWindow::AddSymbolLibrary );
 	connect(symbol_finder.get(), &LibraryBase::ClearLibrary, this, &MainWindow::ClearSymbolLibrary );
+	connect(symbol_finder.get(), &LibraryBase::UpdateLibraryRow, this, &MainWindow::UpdateSymbolLibraryRow);
 	connect(symbol_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddSymbolMsg );
 	connect(symbol_finder.get(), &LibraryBase::ClearResults, this, &MainWindow::ClearSymbolMsgs );
 
@@ -263,7 +266,7 @@ void MainWindow::on_actionAbout_triggered()
 {
 	auto hpp {helpText.right(helpText.size() - helpText.indexOf("Options:"))};
 	QString text {QString("Kicad Helper v%1\nQT v%2\n\n\n%3").arg(PROJECT_VER).arg(QT_VERSION_STR).arg(hpp)};
-
+	//http://www.famfamfam.com/lab/icons/silk/
 	QMessageBox::about( this, "About Kicad Helper", text );
 }
 
@@ -458,7 +461,7 @@ void MainWindow::on_pbFixFP_clicked()
 		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
 		return;
 	}
-	footprint_finder->FixFootPrints(ui->leLibraryFolder->text());
+	footprint_finder->FixFootprints(ui->leLibraryFolder->text());
 }
 
 void MainWindow::on_pbReloadSymLibraries_clicked()
@@ -488,6 +491,78 @@ void MainWindow::on_pbFixSym_clicked()
 		return;
 	}
 	symbol_finder->FixSymbols(ui->leLibraryFolder->text());
+}
+
+void MainWindow::on_pbAddFpLibrary_clicked()
+{
+	QString const footprintLib = QFileDialog::getOpenFileName(this, "Select Kicad Footprint Library Files", ui->leLibraryFolder->text(), tr("Kicad Footprint Librarys (*.kicad_mod *.mod);;All Files (*.*)"));
+	if (!footprintLib.isEmpty())
+	{
+	}
+}
+
+void MainWindow::on_pbDeleteFpLibrary_clicked()
+{
+
+}
+
+void MainWindow::on_pbViewFpLibrary_clicked()
+{
+	int row = GetSelectedRow(ui->twProjectFPLibraries);
+	if (-1 == row)
+	{
+		return;
+	}
+	auto list{ footprint_finder->GetFootprints(ui->twProjectFPLibraries->item(row, LibraryColumns::URL)->text(),
+		ui->twProjectFPLibraries->item(row, LibraryColumns::Type)->text()) };
+	ViewList::Load(list, ui->twProjectFPLibraries->item(row, LibraryColumns::Name)->text());
+}
+
+void MainWindow::on_pbOpenFpLibrary_clicked()
+{
+	int row = GetSelectedRow(ui->twProjectFPLibraries);
+	if (-1 == row)
+	{
+		return;
+	}
+	auto path = QFileInfo(footprint_finder->updatePath(ui->twProjectFPLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
+	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void MainWindow::on_pbAddSymLibrary_clicked()
+{
+	QString const symbolLib = QFileDialog::getOpenFileName(this, "Select Kicad Symbol Library Files", ui->leLibraryFolder->text(), tr("Kicad Symbol Librarys (*.kicad_sym *.lib);;All Files (*.*)"));
+	if (!symbolLib.isEmpty())
+	{
+	}
+}
+
+void MainWindow::on_pbDeleteSymLibrary_clicked()
+{
+
+}
+
+void MainWindow::on_pbViewSymLibrary_clicked()
+{
+	int row = GetSelectedRow(ui->twProjectSymLibraries);
+	if (-1 == row) 
+	{
+		return;
+	}
+	auto list{ symbol_finder->GetSymbols(ui->twProjectSymLibraries->item(row, LibraryColumns::URL)->text(),
+								ui->twProjectSymLibraries->item(row, LibraryColumns::Type)->text()) };
+	ViewList::Load(list, ui->twProjectSymLibraries->item(row, LibraryColumns::Name)->text());
+}
+
+void MainWindow::on_pbOpenSymLibrary_clicked()
+{
+	int row = GetSelectedRow(ui->twProjectSymLibraries);
+	if (-1 == row)
+	{
+		return;
+	}
+	auto path = QFileInfo(symbol_finder->updatePath(ui->twProjectSymLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
+	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 void MainWindow::on_pbSetPartsInSch_clicked()
@@ -575,22 +650,94 @@ void MainWindow::on_lwFiles_itemDoubleClicked( QListWidgetItem * item)
 
 void MainWindow::on_twProjectFPLibraries_cellDoubleClicked(int row, int column)
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(footprint_finder->updatePath(ui->twProjectFPLibraries->item(row, LibraryColumns::URL)->text())));
+	auto header{ ui->twProjectFPLibraries->horizontalHeaderItem(column)->text() };
+	if (column == LibraryColumns::URL)
+	{
+		auto name{ ui->twProjectFPLibraries->item(row, LibraryColumns::Name)->text() };
+		auto value{ ui->twProjectFPLibraries->item(row, LibraryColumns::URL)->text() };
+
+		bool ok;
+		QString text = QInputDialog::getText(this, header,
+			header, QLineEdit::Normal,
+			value, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			footprint_finder->ChangeLibraryPath(name, text, row);
+		}
+	}
+	else if (column == LibraryColumns::Name)
+	{		
+		auto value{ ui->twProjectFPLibraries->item(row, LibraryColumns::Name)->text() };
+		auto type{ ui->twProjectFPLibraries->item(row, LibraryColumns::Type)->text() };
+
+		bool ok;
+		QString text = QInputDialog::getText(this, header,
+			header, QLineEdit::Normal,
+			value, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			footprint_finder->ChangeLibraryName(value, text, row);
+		}
+	}
 }
 
 void MainWindow::on_twGlobalFPLibraries_cellDoubleClicked(int row, int column)
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(footprint_finder->updatePath(ui->twGlobalFPLibraries->item(row, LibraryColumns::URL)->text())));
+	if (column == LibraryColumns::URL)
+	{
+		auto path = QFileInfo(footprint_finder->updatePath(ui->twGlobalFPLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
+		QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+	}
+	//else if (column == LibraryColumns::Name)
+	//{
+	//
+	//}
 }
 
 void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(symbol_finder->updatePath(ui->twProjectSymLibraries->item(row, LibraryColumns::URL)->text())));
+	auto header{ ui->twProjectSymLibraries->horizontalHeaderItem(column)->text() };
+	if (column == LibraryColumns::URL) 
+	{
+		auto name{ ui->twProjectSymLibraries->item(row, LibraryColumns::Name)->text() };
+		auto value{ ui->twProjectSymLibraries->item(row, LibraryColumns::URL)->text() };
+
+		bool ok;
+		QString text = QInputDialog::getText(this, header,
+			header, QLineEdit::Normal,
+			value, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			symbol_finder->ChangeLibraryPath(name, text, row);
+		}
+	}
+	else if (column == LibraryColumns::Name)
+	{
+		auto value{ ui->twProjectSymLibraries->item(row, LibraryColumns::Name)->text() };
+		auto type{ ui->twProjectSymLibraries->item(row, LibraryColumns::Type)->text() };
+
+		bool ok;
+		QString text = QInputDialog::getText(this, header,
+			header, QLineEdit::Normal,
+			value, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			symbol_finder->ChangeLibraryName(value, text, row);
+		}
+	}
 }
 
 void MainWindow::on_twGlobalSymLibraries_cellDoubleClicked(int row, int column)
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(symbol_finder->updatePath(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text())));
+	if (column == LibraryColumns::URL)
+	{
+		auto path = QFileInfo(symbol_finder->updatePath(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
+		QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+	}
+	//else if (column == LibraryColumns::Name)
+	//{
+	//
+	//}
 }
 
 void MainWindow::on_tabWidget_currentChanged(int index)
@@ -761,8 +908,6 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<Mapping> con
 		while (!in.atEnd())
 		{
 			QString line = in.readLine();
-
-
 			lines.append(line);
 		}
 
@@ -863,6 +1008,21 @@ void MainWindow::AddFootprintLibrary( QString const& level, QString const& name,
 	AddLibraryItem(libraryList, name, type, descr, path);
 }
 
+void MainWindow::UpdateFootprintLibraryRow(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path, int row)
+{
+	auto SetItem = [&](int row, int col, QString const& text)
+	{
+		ui->twProjectFPLibraries->item(row, col)->setText(text);
+	};
+
+	SetItem(row, LibraryColumns::Name, name);
+	SetItem(row, LibraryColumns::Type, type);
+	SetItem(row, LibraryColumns::Descr, descr);
+	SetItem(row, LibraryColumns::URL, path);
+
+	ui->twProjectFPLibraries->resizeColumnsToContents();
+}
+
 void MainWindow::ClearFootprintLibrary(QString const& level)
 {
 	if(PROJECT_LIB == level)
@@ -919,6 +1079,21 @@ void MainWindow::AddSymbolLibrary(QString const& level, QString const& name, QSt
 		return;
 	}
 	AddLibraryItem(libraryList, name, type, descr, path);
+}
+
+void MainWindow::UpdateSymbolLibraryRow(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path, int row)
+{
+	auto SetItem = [&](int row, int col, QString const& text)
+	{
+		ui->twProjectSymLibraries->item(row, col)->setText(text);
+	};
+
+	SetItem(row, LibraryColumns::Name, name);
+	SetItem(row, LibraryColumns::Type, type);
+	SetItem(row, LibraryColumns::Descr, descr);
+	SetItem(row, LibraryColumns::URL, path);
+
+	ui->twProjectSymLibraries->resizeColumnsToContents();
 }
 
 void MainWindow::ClearSymbolLibrary(QString const& level)
@@ -981,6 +1156,11 @@ void MainWindow::AddLibraryItem(QTableWidget* libraryList, QString const& name, 
 	SetItem(row, LibraryColumns::URL, path);
 
 	libraryList->resizeColumnsToContents();
+}
+
+int MainWindow::GetSelectedRow(QTableWidget* table)
+{
+	return table->selectionModel()->currentIndex().row();
 }
 
 void MainWindow::AddRecentList(QString const& file)

@@ -10,7 +10,6 @@
 
 constexpr std::string_view PROJ_FOLDER = "${KIPRJMOD}";
 
-
 void LibraryBase::LoadProject(QString const& folder)
 {
     libraryList.clear();
@@ -19,6 +18,26 @@ void LibraryBase::LoadProject(QString const& folder)
     getGlobalLibraries();
 }
 
+void LibraryBase::getProjectLibraries()
+{
+    QString localLibPath{ getProjectLibraryPath() };
+    if (QFile::exists(localLibPath))
+    {
+        ParseLibraries(localLibPath, PROJECT_LIB);
+    }
+}
+
+void LibraryBase::getGlobalLibraries()
+{
+    if (QFile::exists(getGlobalLibraryPath()))
+    {
+        ParseLibraries(getGlobalLibraryPath(), GLOBAL_LIB);
+    }
+    else
+    {
+        emit SendMessage(QString("Could not Open '%1'").arg(getGlobalLibraryPath()), spdlog::level::level_enum::warn, getGlobalLibraryPath());
+    }
+}
 
 QString LibraryBase::getGlobalKicadDataPath() const
 {
@@ -102,6 +121,40 @@ void LibraryBase::AddLibraryPath(QString name, QString type, QString url, QStrin
         auto index = std::distance(libraryList[level].begin(), found);
         libraryList[level][index] = std::move(LibraryInfo(name, type, url, "", ""));
         emit SendMessage(QString("Updating '%1'").arg(name), spdlog::level::level_enum::debug, QString());
+    }
+}
+
+void LibraryBase::ChangeLibraryName(QString const& oldName, QString const& newName, int row)
+{
+    if (auto const found{
+            std::find_if(libraryList[PROJECT_LIB].begin(), libraryList[PROJECT_LIB].end(), [&](auto const& elem)
+            { return elem.name == oldName; })
+        };
+        found != libraryList[PROJECT_LIB].end())
+    {
+        auto index = std::distance(libraryList[PROJECT_LIB].begin(), found);
+        libraryList[PROJECT_LIB][index].name = newName;
+        emit UpdateLibraryRow(PROJECT_LIB, libraryList[PROJECT_LIB][index].name,
+            libraryList[PROJECT_LIB][index].type, libraryList[PROJECT_LIB][index].descr,
+            libraryList[PROJECT_LIB][index].url, row);
+        SaveLibraryTable(getProjectLibraryPath());
+    }
+}
+
+void LibraryBase::ChangeLibraryPath(QString const& name, QString const& newPath, int row)
+{
+    if (auto const found{
+            std::find_if(libraryList[PROJECT_LIB].begin(), libraryList[PROJECT_LIB].end(), [&](auto const& elem)
+            { return elem.name == name; })
+        };
+        found != libraryList[PROJECT_LIB].end())
+    {
+        auto index = std::distance(libraryList[PROJECT_LIB].begin(), found);
+        libraryList[PROJECT_LIB][index].url = newPath;
+        emit UpdateLibraryRow(PROJECT_LIB, libraryList[PROJECT_LIB][index].name,
+            libraryList[PROJECT_LIB][index].type, libraryList[PROJECT_LIB][index].descr,
+            libraryList[PROJECT_LIB][index].url, row);
+        SaveLibraryTable(getProjectLibraryPath());
     }
 }
 
@@ -299,7 +352,7 @@ QString LibraryBase::FindRecurseDirectory(const QString& startDir, const QString
 {
 	QDir dir(startDir);
 	QFileInfoList list = dir.entryInfoList();
-	for (int iList=0;iList<list.count();iList++)
+	for (int iList = 0;iList<list.count();iList++)
 	{
 		QFileInfo info = list[iList];
  
@@ -352,7 +405,6 @@ QString LibraryBase::FindRecurseFile(const QString& startDir, const QStringList&
 
 QStringList LibraryBase::FindRecurseFiles(const QString& startDir, const QStringList& fileNames) const
 {
-
     QStringList returnList;
 	QDir dir(startDir);
 	dir.setNameFilters(fileNames);

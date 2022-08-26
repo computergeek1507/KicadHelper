@@ -18,28 +18,28 @@ public:
     ~FootprintFinder() {}
 
 	bool CheckSchematics();
-	bool FixFootPrints(QString const& folder); 
+	bool FixFootprints(QString const& folder);
+	QStringList GetFootprints(QString const& url, QString const& type) const;
 
 private:
 	void SaveLibraryTable(QString const& fileName);
 
-	void getProjectLibraries() override;
-	void getGlobalLibraries() override;
+	QString getProjectLibraryPath() const override;
+	QString getGlobalLibraryPath() const override;
 
 	void CheckSchematic(QString const& schPath);
 	void CreateFootprintList();
 
-	bool HasFootPrint(QString const& footprint) const;
-	QStringList GetLegacyFootPrints(QString const& url) const;
+	bool HasFootprint(QString const& footprint) const;
+	QStringList GetLegacyFootprints(QString const& url) const;
 
-	QStringList GetKicadFootPrints(QString const& url) const;
+	QStringList GetKicadFootprints(QString const& url) const;
 
-	bool AttemptToFindFootPrintPath(QString const& footprint, QString const& libraryPath );
-	bool ConvertAllPathsToRelative(QString const& libraryPath);
+	bool AttemptToFindFootprintPath(QString const& footprint, QString const& libraryPath );
 
 	QMap<QString,QStringList> footprintList;
 
-	QStringList missingfootprintList;
+	QStringList missingFootprintList;
 };
 
 #endif

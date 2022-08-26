@@ -11,6 +11,9 @@
 constexpr const char* PROJECT_LIB = "Project";
 constexpr const char* GLOBAL_LIB = "Global";
 
+constexpr const char* LEGACY_LIB = "Legacy";
+constexpr const char* KICAD_LIB = "KiCad";
+
 //constexpr std::string_view PROJ_FOLDER = "${KIPRJMOD}";
 
 class LibraryBase : public QObject
@@ -24,21 +27,27 @@ public:
 	QString updatePath(QString path) const;
 	virtual void LoadProject(QString const& folder);
 
+	virtual void ChangeLibraryName(QString const& oldName, QString const& newName, int row);
+	virtual void ChangeLibraryPath(QString const& name, QString const& newPath, int row);
 Q_SIGNALS:
 	void SendMessage( QString const& message,  spdlog::level::level_enum llvl, QString const& file) const;
 
 	void AddLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path) const;
 	void ClearLibrary(QString const& level) const;
 
+	void UpdateLibraryRow(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path, int row) const;
+
 	void SendResult(QString const& message, bool error) const;
 	void ClearResults() const;
 
 protected:
-	virtual void getProjectLibraries() = 0;
-	virtual void getGlobalLibraries() = 0;
-
 	void ParseLibraries(QString const& path, QString const& level);
 	virtual void SaveLibraryTable(QString const& fileName) = 0;
+	virtual QString getProjectLibraryPath() const = 0;
+	virtual QString getGlobalLibraryPath() const = 0;
+
+	void getProjectLibraries();
+	void getGlobalLibraries();
 
 	QString getGlobalKicadDataPath() const;
 	QString getGlobalTemplatePath() const;

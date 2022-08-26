@@ -70,7 +70,11 @@
          </size>
         </property>
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="KicadHelper.qrc">
+          <normaloff>:/KicadHelper/icons/folder_go.png</normaloff>:/KicadHelper/icons/folder_go.png</iconset>
         </property>
        </widget>
       </item>
@@ -87,7 +91,11 @@
       <item row="2" column="2">
        <widget class="QPushButton" name="pbLibraryFolder">
         <property name="text">
-         <string>...</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="KicadHelper.qrc">
+          <normaloff>:/KicadHelper/icons/folder_go.png</normaloff>:/KicadHelper/icons/folder_go.png</iconset>
         </property>
        </widget>
       </item>
@@ -96,7 +104,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tabPartNumber">
        <attribute name="title">
@@ -148,6 +156,10 @@
             <property name="text">
              <string>Add Part Numbers to Schematics</string>
             </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/drive_go.png</normaloff>:/KicadHelper/icons/drive_go.png</iconset>
+            </property>
            </widget>
           </item>
           <item>
@@ -168,12 +180,20 @@
             <property name="text">
              <string>Add PN...</string>
             </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/add.png</normaloff>:/KicadHelper/icons/add.png</iconset>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="pbDeletePN">
             <property name="text">
              <string>Delete PN</string>
+            </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/delete.png</normaloff>:/KicadHelper/icons/delete.png</iconset>
             </property>
            </widget>
           </item>
@@ -198,6 +218,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
              <widget class="QTableWidget" name="twProjectFPLibraries">
+              <property name="selectionBehavior">
+               <enum>QAbstractItemView::SelectItems</enum>
+              </property>
               <attribute name="horizontalHeaderMinimumSectionSize">
                <number>30</number>
               </attribute>
@@ -232,6 +255,79 @@
               </column>
              </widget>
             </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_9">
+              <item>
+               <widget class="QPushButton" name="pbAddFpLibrary">
+                <property name="toolTip">
+                 <string>Add Library</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/table_add.png</normaloff>:/KicadHelper/icons/table_add.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pbDeleteFpLibraries">
+                <property name="toolTip">
+                 <string>Remove Library</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/table_delete.png</normaloff>:/KicadHelper/icons/table_delete.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pbViewFpLibrary">
+                <property name="toolTip">
+                 <string>View Library Footprints</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/table_go.png</normaloff>:/KicadHelper/icons/table_go.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pbOpenFpLibrary">
+                <property name="toolTip">
+                 <string>Open Library Folder</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/folder_table.png</normaloff>:/KicadHelper/icons/folder_table.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="verticalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
            </layout>
           </widget>
           <widget class="QWidget" name="tab_2">
@@ -241,6 +337,9 @@
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>
              <widget class="QTableWidget" name="twGlobalFPLibraries">
+              <property name="selectionBehavior">
+               <enum>QAbstractItemView::SelectItems</enum>
+              </property>
               <attribute name="horizontalHeaderMinimumSectionSize">
                <number>30</number>
               </attribute>
@@ -286,6 +385,10 @@
             <property name="text">
              <string>Reload Libraries</string>
             </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/arrow_refresh.png</normaloff>:/KicadHelper/icons/arrow_refresh.png</iconset>
+            </property>
            </widget>
           </item>
           <item>
@@ -293,12 +396,20 @@
             <property name="text">
              <string>Check FootPrints in Schematics</string>
             </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/tick.png</normaloff>:/KicadHelper/icons/tick.png</iconset>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="pbFixFP">
             <property name="text">
              <string>Auto Find FootPrints</string>
+            </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/find.png</normaloff>:/KicadHelper/icons/find.png</iconset>
             </property>
            </widget>
           </item>
@@ -326,6 +437,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
              <widget class="QTableWidget" name="twProjectSymLibraries">
+              <property name="selectionBehavior">
+               <enum>QAbstractItemView::SelectItems</enum>
+              </property>
               <attribute name="horizontalHeaderMinimumSectionSize">
                <number>30</number>
               </attribute>
@@ -360,6 +474,76 @@
               </column>
              </widget>
             </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_8">
+              <item>
+               <widget class="QPushButton" name="pbAddSymLibrary">
+                <property name="toolTip">
+                 <string>Add Library</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/table_add.png</normaloff>:/KicadHelper/icons/table_add.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pbDeleteSymLibrary">
+                <property name="toolTip">
+                 <string>Remove Library</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/table_delete.png</normaloff>:/KicadHelper/icons/table_delete.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pbViewSymLibrary">
+                <property name="toolTip">
+                 <string>View Library Footprints</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/table_go.png</normaloff>:/KicadHelper/icons/table_go.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pbOpenSymLibrary">
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/folder_table.png</normaloff>:/KicadHelper/icons/folder_table.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="verticalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
            </layout>
           </widget>
           <widget class="QWidget" name="tab_4">
@@ -369,6 +553,9 @@
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
              <widget class="QTableWidget" name="twGlobalSymLibraries">
+              <property name="selectionBehavior">
+               <enum>QAbstractItemView::SelectItems</enum>
+              </property>
               <attribute name="horizontalHeaderMinimumSectionSize">
                <number>30</number>
               </attribute>
@@ -414,6 +601,10 @@
             <property name="text">
              <string>Reload Libraries</string>
             </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/arrow_refresh.png</normaloff>:/KicadHelper/icons/arrow_refresh.png</iconset>
+            </property>
            </widget>
           </item>
           <item>
@@ -421,12 +612,20 @@
             <property name="text">
              <string>Check Symbols in Schematics</string>
             </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/tick.png</normaloff>:/KicadHelper/icons/tick.png</iconset>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="pbFixSym">
             <property name="text">
              <string>Auto Find Symbols</string>
+            </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/find.png</normaloff>:/KicadHelper/icons/find.png</iconset>
             </property>
            </widget>
           </item>
@@ -457,6 +656,10 @@
           <property name="text">
            <string>Run Text Replace</string>
           </property>
+          <property name="icon">
+           <iconset resource="KicadHelper.qrc">
+            <normaloff>:/KicadHelper/icons/tag.png</normaloff>:/KicadHelper/icons/tag.png</iconset>
+          </property>
          </widget>
         </item>
         <item>
@@ -486,12 +689,20 @@
             <property name="text">
              <string>Add Map...</string>
             </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/add.png</normaloff>:/KicadHelper/icons/add.png</iconset>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="pbRemoveMap">
             <property name="text">
              <string>Remove Map</string>
+            </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/delete.png</normaloff>:/KicadHelper/icons/delete.png</iconset>
             </property>
            </widget>
           </item>
@@ -521,6 +732,10 @@
          <widget class="QPushButton" name="pbRename">
           <property name="text">
            <string>Rename</string>
+          </property>
+          <property name="icon">
+           <iconset resource="KicadHelper.qrc">
+            <normaloff>:/KicadHelper/icons/tag.png</normaloff>:/KicadHelper/icons/tag.png</iconset>
           </property>
          </widget>
         </item>
@@ -589,7 +804,7 @@
      <x>0</x>
      <y>0</y>
      <width>1046</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -643,16 +858,28 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionClose">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/icons/cancel.png</normaloff>:/KicadHelper/icons/cancel.png</iconset>
+   </property>
    <property name="text">
     <string>Close</string>
    </property>
   </action>
   <action name="actionOpen_Logs">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/icons/book_open.png</normaloff>:/KicadHelper/icons/book_open.png</iconset>
+   </property>
    <property name="text">
     <string>Open Logs...</string>
    </property>
   </action>
   <action name="actionOpen_Project">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/icons/folder.png</normaloff>:/KicadHelper/icons/folder.png</iconset>
+   </property>
    <property name="text">
     <string>Open Project...</string>
    </property>
@@ -673,16 +900,28 @@
    </property>
   </action>
   <action name="actionReload_Project">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/icons/arrow_refresh_small.png</normaloff>:/KicadHelper/icons/arrow_refresh_small.png</iconset>
+   </property>
    <property name="text">
     <string>Reload Project</string>
    </property>
   </action>
   <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/kicad.png</normaloff>:/KicadHelper/kicad.png</iconset>
+   </property>
    <property name="text">
     <string>About...</string>
    </property>
   </action>
   <action name="actionImport_Parts_from_Schematic">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/icons/report_add.png</normaloff>:/KicadHelper/icons/report_add.png</iconset>
+   </property>
    <property name="text">
     <string>PartList from Schematic...</string>
    </property>
@@ -709,21 +948,37 @@
    </property>
   </action>
   <action name="actionSet_Library_Folder">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/icons/folder_table.png</normaloff>:/KicadHelper/icons/folder_table.png</iconset>
+   </property>
    <property name="text">
     <string>Set Library Folder</string>
    </property>
   </action>
   <action name="actionLibrary_Report">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/icons/report_go.png</normaloff>:/KicadHelper/icons/report_go.png</iconset>
+   </property>
    <property name="text">
     <string>Library Report...</string>
    </property>
   </action>
   <action name="actionBOM_CSV">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/icons/table.png</normaloff>:/KicadHelper/icons/table.png</iconset>
+   </property>
    <property name="text">
     <string>BOM CSV...</string>
    </property>
   </action>
   <action name="actionClear">
+   <property name="icon">
+    <iconset resource="KicadHelper.qrc">
+     <normaloff>:/KicadHelper/icons/cross.png</normaloff>:/KicadHelper/icons/cross.png</iconset>
+   </property>
    <property name="text">
     <string>Clear</string>
    </property>

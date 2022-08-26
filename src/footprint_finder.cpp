@@ -13,25 +13,14 @@ FootprintFinder::FootprintFinder()
 
 }
 
-void FootprintFinder::getProjectLibraries()
+QString FootprintFinder::getProjectLibraryPath() const
 {
-    QString localLibPath = m_projectFolder + "/fp-lib-table";
-    if(QFile::exists(localLibPath))
-    {
-        ParseLibraries(localLibPath, PROJECT_LIB);
-    }
+    return m_projectFolder + "/fp-lib-table";
 }
 
-void FootprintFinder::getGlobalLibraries()
+QString FootprintFinder::getGlobalLibraryPath() const
 {
-    if(QFile::exists(getGlobalFootprintTablePath()))
-    {
-        ParseLibraries(getGlobalFootprintTablePath(), GLOBAL_LIB);
-    }
-    else
-    {
-        emit SendMessage(QString("Could not Open '%1'").arg(getGlobalFootprintTablePath()), spdlog::level::level_enum::warn, getGlobalFootprintTablePath());
-    }
+    return getGlobalSymbolTablePath();
 }
 
 void FootprintFinder::SaveLibraryTable(QString const& fileName)
@@ -71,7 +60,7 @@ bool FootprintFinder::CheckSchematics()
 		return false;
 	}
 
-    missingfootprintList.clear();
+    missingFootprintList.clear();
 
     auto const& kicadFiles {directory.entryInfoList(QStringList() << "*.kicad_sch" , QDir::Files)};
 	for (auto const& file : kicadFiles)
@@ -123,11 +112,11 @@ void FootprintFinder::CheckSchematic(QString const& schPath)
         {
             continue;
         }
-        if(!HasFootPrint(footprint))
+        if(!HasFootprint(footprint))
         {
-            if (!missingfootprintList.contains(footprint))
+            if (!missingFootprintList.contains(footprint))
             {
-                missingfootprintList.append(footprint);
+                missingFootprintList.append(footprint);
             }
             emit SendResult(QString("'%1':'%2' was not found in '%3'").arg(reference).arg(footprint).arg(fileData.fileName()),true);
             errorFound = true;
@@ -142,7 +131,7 @@ void FootprintFinder::CheckSchematic(QString const& schPath)
     }
 }
 
-bool FootprintFinder::HasFootPrint(QString const& footprint) const
+bool FootprintFinder::HasFootprint(QString const& footprint) const
 {
     if(!footprint.contains(":"))
     {
@@ -174,13 +163,13 @@ void FootprintFinder::CreateFootprintList()
                 continue;
             }
             QStringList fps;
-            if(lib.type == "Legacy")
+            if(lib.type == LEGACY_LIB)
             {
-                fps = GetLegacyFootPrints(lib.url);
+                fps = GetLegacyFootprints(lib.url);
             }
-            else if(lib.type == "KiCad")
+            else if(lib.type == KICAD_LIB)
             {
-                fps = GetKicadFootPrints(lib.url);
+                fps = GetKicadFootprints(lib.url);
             }
 
             if(!fps.empty())
@@ -191,7 +180,7 @@ void FootprintFinder::CreateFootprintList()
     }
 }
 
-QStringList FootprintFinder::GetLegacyFootPrints(QString const& url) const
+QStringList FootprintFinder::GetLegacyFootprints(QString const& url) const
 {
     QStringList list;
 
@@ -244,7 +233,7 @@ QStringList FootprintFinder::GetLegacyFootPrints(QString const& url) const
     return list;
 }
 
-QStringList FootprintFinder::GetKicadFootPrints(QString const& url) const
+QStringList FootprintFinder::GetKicadFootprints(QString const& url) const
 {
     QStringList list;
 
@@ -265,7 +254,7 @@ QStringList FootprintFinder::GetKicadFootPrints(QString const& url) const
     return list;
 }
 
-bool FootprintFinder::FixFootPrints(QString const& folder)
+bool FootprintFinder::FixFootprints(QString const& folder)
 {
     bool worked{false};
     /*
@@ -274,7 +263,7 @@ bool FootprintFinder::FixFootPrints(QString const& folder)
         2) Find librarys in library folder and add Footprint Table
         3) IDK 
     */
-    if (missingfootprintList.empty())
+    if (missingFootprintList.empty())
     {
         CheckSchematics();
     }
@@ -291,9 +280,9 @@ bool FootprintFinder::FixFootPrints(QString const& folder)
         CheckSchematics();
     }
 
-    for (auto const& footprint : missingfootprintList)
+    for (auto const& footprint : missingFootprintList)
     {
-        if(AttemptToFindFootPrintPath(footprint,folder))
+        if(AttemptToFindFootprintPath(footprint,folder))
         {
             worked = true;
         }
@@ -313,7 +302,7 @@ bool FootprintFinder::FixFootPrints(QString const& folder)
     return worked;
 }
 
-bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QString const& libraryPath )
+bool FootprintFinder::AttemptToFindFootprintPath(QString const& footprint, QString const& libraryPath )
 {
     if(!footprint.contains(":"))
     {
@@ -343,7 +332,7 @@ bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QStri
             auto newPath{ConvertToRelativePath(prettyPath.absolutePath(),libraryPath )};
 
             emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, prettyPath.absolutePath());
-            AddLibraryPath(parts[0],"KiCad", newPath, PROJECT_LIB);
+            AddLibraryPath(parts[0], KICAD_LIB, newPath, PROJECT_LIB);
             return true;
         }
 
@@ -351,7 +340,7 @@ bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QStri
         if(!FoundKicdLibPath.isEmpty())
         {
             //legacy
-            auto Footprints = GetLegacyFootPrints(FoundKicdLibPath);
+            auto Footprints = GetLegacyFootprints(FoundKicdLibPath);
             if(Footprints.contains(parts[1]))
             {
                 //found something
@@ -359,7 +348,7 @@ bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QStri
                 //add to library file
                 auto newPath{ConvertToRelativePath(FoundKicdLibPath,libraryPath)};
                 emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, FoundKicdLibPath);
-                AddLibraryPath(parts[0],"Legacy", newPath,PROJECT_LIB);
+                AddLibraryPath(parts[0], LEGACY_LIB, newPath,PROJECT_LIB);
                 return true;
             }
         }
@@ -376,7 +365,7 @@ bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QStri
         auto newPath{ConvertToRelativePath(prettyPath.absolutePath(),libraryPath )};
 
         emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, prettyPath.absolutePath());
-        AddLibraryPath(parts[0],"KiCad", newPath, PROJECT_LIB);
+        AddLibraryPath(parts[0], KICAD_LIB, newPath, PROJECT_LIB);
         return true;
     }
 
@@ -385,7 +374,7 @@ bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QStri
     if(!FoundKicdLibPath.isEmpty())
     {
         //legacy
-        auto Footprints = GetLegacyFootPrints(FoundKicdLibPath);
+        auto Footprints = GetLegacyFootprints(FoundKicdLibPath);
         if(Footprints.contains(parts[1]))
         {
             //found something
@@ -393,7 +382,7 @@ bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QStri
             //add to library file
             auto newPath{ConvertToRelativePath(FoundKicdLibPath,libraryPath)};
             emit SendMessage(QString("Found '%1' footprint in '%2'").arg(footprint).arg(newPath), spdlog::level::level_enum::debug, FoundKicdLibPath);
-            AddLibraryPath(parts[0],"Legacy", newPath,PROJECT_LIB);
+            AddLibraryPath(parts[0], LEGACY_LIB, newPath,PROJECT_LIB);
             return true;
         }
     }
@@ -401,17 +390,15 @@ bool FootprintFinder::AttemptToFindFootPrintPath(QString const& footprint, QStri
     return false;
 }
 
-bool FootprintFinder::ConvertAllPathsToRelative(QString const& libraryPath)
+QStringList FootprintFinder::GetFootprints(QString const& url, QString const& type) const
 {
-    bool worked{false};
-    for (auto & path : libraryList[PROJECT_LIB])
+    if (type == LEGACY_LIB)
     {
-        auto newPath {ConvertToRelativePath(path.url, libraryPath)};
-        if(newPath.compare(path.url) != 0)
-        {
-            path.url = newPath;
-            worked = true;
-        }
+        return GetLegacyFootprints(url);
     }
-    return worked;
+    else if (type == KICAD_LIB)
+    {
+        return GetKicadFootprints(url);
+    }
+    return QStringList();
 }

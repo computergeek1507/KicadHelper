@@ -68,10 +68,20 @@ public Q_SLOTS:
     void on_pbCheckFP_clicked();
     void on_pbFixFP_clicked();
 
+    void on_pbAddFpLibrary_clicked();
+    void on_pbDeleteFpLibrary_clicked();
+    void on_pbViewFpLibrary_clicked();
+    void on_pbOpenFpLibrary_clicked();
+
     //3rd tab
     void on_pbReloadSymLibraries_clicked();
     void on_pbCheckSym_clicked();
     void on_pbFixSym_clicked();
+
+    void on_pbAddSymLibrary_clicked();
+    void on_pbDeleteSymLibrary_clicked();
+    void on_pbViewSymLibrary_clicked();
+    void on_pbOpenSymLibrary_clicked();
 
     //4nd tab
     void on_pbTextReplace_clicked();
@@ -99,6 +109,7 @@ public Q_SLOTS:
     void on_actionClear_triggered();
 
     void AddFootprintLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path);
+    void UpdateFootprintLibraryRow(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path, int row);
     void ClearFootprintLibrary(QString const& level);
     void ClearFootprintLibrarys();
 
@@ -106,6 +117,7 @@ public Q_SLOTS:
     void ClearFootprintMsgs();
 
     void AddSymbolLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path);
+    void UpdateSymbolLibraryRow(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path, int row);
     void ClearSymbolLibrary(QString const& level);
     void ClearSymbolLibrarys();
 
@@ -137,9 +149,10 @@ private:
 
     QStringList libraryReport;
 
-    void AddResultMsg(QListWidget * listw, QString const& message, bool error);
+    void AddResultMsg(QListWidget* listw, QString const& message, bool error);
     void AddLibraryItem(QTableWidget* libraryList, QString const& name, QString const& type, QString const& descr, QString const& path);
-    void ClearTableWidget(QTableWidget * table);
+    void ClearTableWidget(QTableWidget* table);
+    int GetSelectedRow(QTableWidget* table);
 
     void AddRecentList(QString const& project);
     void RedrawRecentList();

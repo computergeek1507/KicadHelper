@@ -18,14 +18,16 @@ public:
 	bool CheckSchematics();
 	bool FixSymbols(QString const& folder);
 
+	QStringList GetSymbols(QString const& url, QString const& type) const;
+
 Q_SIGNALS:
 
 
 private:
 	void SaveLibraryTable(QString const& fileName);
 
-	void getProjectLibraries() override;
-	void getGlobalLibraries() override;
+	QString getProjectLibraryPath() const override;
+	QString getGlobalLibraryPath() const override;
 
 	void CheckSchematic(QString const& schPath);
 	void CreateSymbolList();

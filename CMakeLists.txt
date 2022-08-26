@@ -42,6 +42,7 @@ file( GLOB_RECURSE BASE_RES res/*ui res/*qrc)
 qt5_wrap_ui(BASE_SRC res/addmapping.ui)
 qt5_wrap_ui(BASE_SRC res/addpartnumber.ui)
 qt5_wrap_ui(BASE_SRC res/mainwindow.ui)
+qt5_wrap_ui(BASE_SRC res/viewlist.ui)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(${PROJECT_NAME}

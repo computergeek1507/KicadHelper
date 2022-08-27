@@ -2,7 +2,7 @@
 
 This tool 'helps' me manager/fix Kicad Projects.
 
-![Gif]("/res/images/find fp.gif")
+![Gif](/res/images/find fp.gif)
 
 First Tab Tab will add Digikey, LCSC, MPN Partnumbers based on the Value and Footprint.
 

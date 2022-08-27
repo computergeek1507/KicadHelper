@@ -265,7 +265,7 @@ void MainWindow::on_actionClose_triggered()
 void MainWindow::on_actionAbout_triggered()
 {
 	auto hpp {helpText.right(helpText.size() - helpText.indexOf("Options:"))};
-	QString text {QString("Kicad Helper v%1\nQT v%2\n\n\n%3\n\nIcons by:\n%4")
+	QString text {QString("Kicad Helper v%1\nQT v%2\n\n\nCommandline %3\n\nIcons by:\n%4")
 		.arg(PROJECT_VER).arg(QT_VERSION_STR)
 		.arg(hpp)
 		.arg(R"(http://www.famfamfam.com/lab/icons/silk/)")};
@@ -309,7 +309,6 @@ void MainWindow::on_pbRename_clicked()
 
 	for (const auto& file : project.dir().entryInfoList(QDir::NoDotAndDotDot | QDir::System | QDir::Hidden | QDir::Files ))
 	{
-		//QString const test = partVerFileInfoList[i].filePath();
 		QString newName = file.filePath().replace(ui->leOldName->text(), ui->leNewName->text());
 		if (file.filePath() == newName)
 		{
@@ -599,7 +598,6 @@ void MainWindow::on_pbAddPN_clicked()
 
 void MainWindow::on_pbDeletePN_clicked()
 {
-	//ui->twParts
 	QModelIndexList indexes = ui->twParts->selectionModel()->selectedIndexes();
 
 	QList<int> rowsList;
@@ -685,7 +683,6 @@ void MainWindow::on_twProjectFPLibraries_cellDoubleClicked(int row, int column)
 	else if (column == LibraryColumns::Name)
 	{		
 		auto value{ ui->twProjectFPLibraries->item(row, LibraryColumns::Name)->text() };
-		//auto type{ ui->twProjectFPLibraries->item(row, LibraryColumns::Type)->text() };
 
 		bool ok;
 		QString text = QInputDialog::getText(this, header,

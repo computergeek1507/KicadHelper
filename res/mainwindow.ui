@@ -104,7 +104,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tabPartNumber">
        <attribute name="title">
@@ -163,19 +163,6 @@
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
            <widget class="QPushButton" name="pbAddPN">
             <property name="text">
              <string>Add PN...</string>
@@ -196,6 +183,19 @@
               <normaloff>:/KicadHelper/icons/delete.png</normaloff>:/KicadHelper/icons/delete.png</iconset>
             </property>
            </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </item>
@@ -413,10 +413,30 @@
             </property>
            </widget>
           </item>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
          </layout>
         </item>
         <item>
-         <widget class="QListWidget" name="lwFPResults"/>
+         <widget class="QListWidget" name="lwFPResults">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -507,7 +527,7 @@
               <item>
                <widget class="QPushButton" name="pbViewSymLibrary">
                 <property name="toolTip">
-                 <string>View Library Footprints</string>
+                 <string>View Library Symbols</string>
                 </property>
                 <property name="text">
                  <string/>
@@ -520,6 +540,9 @@
               </item>
               <item>
                <widget class="QPushButton" name="pbOpenSymLibrary">
+                <property name="toolTip">
+                 <string>Open Library Folder</string>
+                </property>
                 <property name="text">
                  <string/>
                 </property>
@@ -629,10 +652,30 @@
             </property>
            </widget>
           </item>
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
          </layout>
         </item>
         <item>
-         <widget class="QListWidget" name="lwSymResults"/>
+         <widget class="QListWidget" name="lwSymResults">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -804,7 +847,7 @@
      <x>0</x>
      <y>0</y>
      <width>1046</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

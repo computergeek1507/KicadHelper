@@ -1217,11 +1217,39 @@ void MainWindow::AddSymbolMsg( QString const& message, bool error)
 void MainWindow::ClearSymbolMsgs()
 {
 	ui->lwSymResults->clear();
+	for (int i = 0; i < ui->twProjectSymLibraries->rowCount(); ++i)
+	{		
+		for (int j = 0; j < ui->twProjectSymLibraries->columnCount(); ++j)
+		{
+			ui->twProjectSymLibraries->item(i, j)->setBackground(ui->twProjectSymLibraries->palette().base().color());
+		}
+	}
+	for (int i = 0; i < ui->twGlobalSymLibraries->rowCount(); ++i)
+	{
+		for (int j = 0; j < ui->twGlobalSymLibraries->columnCount(); ++j)
+		{
+			ui->twGlobalSymLibraries->item(i, j)->setBackground(ui->twGlobalSymLibraries->palette().base().color());
+		}
+	}
 }
 
 void MainWindow::ClearFootprintMsgs()
 {
 	ui->lwFPResults->clear();
+	for (int i = 0; i < ui->twProjectFPLibraries->rowCount(); ++i)
+	{
+		for (int j = 0; j < ui->twProjectFPLibraries->columnCount(); ++j)
+		{
+			ui->twProjectFPLibraries->item(i, j)->setBackground(ui->twProjectFPLibraries->palette().base().color());
+		}
+	}
+	for (int i = 0; i < ui->twGlobalFPLibraries->rowCount(); ++i)
+	{
+		for (int j = 0; j < ui->twGlobalFPLibraries->columnCount(); ++j)
+		{
+			ui->twGlobalFPLibraries->item(i, j)->setBackground(ui->twGlobalFPLibraries->palette().base().color());
+		}
+	}
 }
 
 void MainWindow::AddLibraryItem(QTableWidget* libraryList, QString const& name, QString const& type, QString const& descr, QString const& path)

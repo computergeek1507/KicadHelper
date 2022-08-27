@@ -153,7 +153,7 @@ void FootprintFinder::CreateFootprintList()
 {
     footprintList.clear();
 
-    for(auto const& library : libraryList)
+    for(auto const& [level,library] : libraryList)
     {
         for(auto const& lib : library)
         {
@@ -175,6 +175,10 @@ void FootprintFinder::CreateFootprintList()
             if(!fps.empty())
             {
                 footprintList.insert(lib.name, fps);
+            }
+            else
+            {
+                emit SendLibraryError(level, lib.name);
             }
         }
     }

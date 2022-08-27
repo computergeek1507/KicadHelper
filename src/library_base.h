@@ -6,7 +6,7 @@
 #include "library_info.h"
 
 #include <QObject>
-#include <QMap>
+#include <map>
 
 constexpr const char* PROJECT_LIB = "Project";
 constexpr const char* GLOBAL_LIB = "Global";
@@ -43,6 +43,7 @@ Q_SIGNALS:
 
 	void SendResult(QString const& message, bool error) const;
 	void SendClearResults() const;
+	void SendLibraryError(QString const& level, QString const& name) const;
 
 protected:
 	void ParseLibraries(QString const& path, QString const& level);
@@ -81,7 +82,7 @@ protected:
 
 	QString m_projectFolder;
 
-	QMap<QString, std::vector<LibraryInfo>> libraryList;
+	std::map<QString, std::vector<LibraryInfo>> libraryList;
 };
 
 #endif

@@ -8,6 +8,7 @@
 #include "library_base.h"
 
 #include <QObject>
+#include <QMap>
 
 class FootprintFinder : public LibraryBase
 {

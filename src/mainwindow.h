@@ -111,6 +111,7 @@ public Q_SLOTS:
     void AddFootprintLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path);
     void UpdateFootprintLibraryRow(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path, int row);
     void ClearFootprintLibrary(QString const& level);
+    void SetFootprintLibraryError(QString const& level, QString const& name);
     void ClearFootprintLibrarys();
 
     void AddFootprintMsg( QString const& message, bool error);
@@ -119,6 +120,7 @@ public Q_SLOTS:
     void AddSymbolLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path);
     void UpdateSymbolLibraryRow(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path, int row);
     void ClearSymbolLibrary(QString const& level);
+    void SetSymbolLibraryError(QString const& level, QString const& name);
     void ClearSymbolLibrarys();
 
     void AddSymbolMsg( QString const& message, bool error);
@@ -152,7 +154,8 @@ private:
     void AddResultMsg(QListWidget* listw, QString const& message, bool error);
     void AddLibraryItem(QTableWidget* libraryList, QString const& name, QString const& type, QString const& descr, QString const& path);
     void ClearTableWidget(QTableWidget* table);
-    int GetSelectedRow(QTableWidget* table);
+    int GetSelectedRow(QTableWidget* table) const;
+    void SetTableWidgetError(QTableWidget* table, QString const& name);
 
     void AddRecentList(QString const& project);
     void RedrawRecentList();

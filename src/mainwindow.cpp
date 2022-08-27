@@ -83,6 +83,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(footprint_finder.get(), &LibraryBase::SendUpdateLibraryRow, this, &MainWindow::UpdateFootprintLibraryRow);
 	connect(footprint_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddFootprintMsg );
 	connect(footprint_finder.get(), &LibraryBase::SendClearResults, this, &MainWindow::ClearFootprintMsgs );
+	connect(footprint_finder.get(), &LibraryBase::SendLibraryError, this, &MainWindow::SetSymbolLibraryError);
 
 	symbol_finder = std::make_unique<SymbolFinder>();
 	connect(symbol_finder.get(), &LibraryBase::SendMessage, this, &MainWindow::LogMessage );
@@ -91,6 +92,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(symbol_finder.get(), &LibraryBase::SendUpdateLibraryRow, this, &MainWindow::UpdateSymbolLibraryRow);
 	connect(symbol_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddSymbolMsg );
 	connect(symbol_finder.get(), &LibraryBase::SendClearResults, this, &MainWindow::ClearSymbolMsgs );
+	connect(symbol_finder.get(), &LibraryBase::SendLibraryError, this, &MainWindow::SetSymbolLibraryError);
 
 	schematic_adder = std::make_unique<SchematicAdder>();
 	connect(schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
@@ -1081,6 +1083,18 @@ void MainWindow::ClearFootprintLibrary(QString const& level)
 	}
 }
 
+void MainWindow::SetFootprintLibraryError(QString const& level, QString const& name) 
+{
+	if (PROJECT_LIB == level)
+	{
+		SetTableWidgetError(ui->twProjectFPLibraries, name);
+	}
+	if (GLOBAL_LIB == level)
+	{
+		SetTableWidgetError(ui->twGlobalFPLibraries, name);
+	}
+}
+
 void MainWindow::ClearFootprintLibrarys()
 {
 	ClearTableWidget(ui->twGlobalFPLibraries);
@@ -1153,6 +1167,17 @@ void MainWindow::ClearSymbolLibrary(QString const& level)
 		ClearTableWidget(ui->twGlobalSymLibraries);
 	}
 }
+void MainWindow::SetSymbolLibraryError(QString const& level, QString const& name) 
+{
+	if (PROJECT_LIB == level)
+	{
+		SetTableWidgetError(ui->twProjectSymLibraries, name);
+	}
+	if (GLOBAL_LIB == level)
+	{
+		SetTableWidgetError(ui->twGlobalSymLibraries, name);
+	}
+}
 
 void MainWindow::ClearSymbolLibrarys()
 {
@@ -1160,12 +1185,27 @@ void MainWindow::ClearSymbolLibrarys()
 	ClearTableWidget(ui->twProjectSymLibraries);
 }
 
-void MainWindow::ClearTableWidget(QTableWidget * table)
+void MainWindow::ClearTableWidget(QTableWidget* table)
 {
 	table->clearContents();
 	while( table->rowCount() != 0 )
 	{
 		table->removeRow(0);
+	}
+}
+
+void MainWindow::SetTableWidgetError(QTableWidget* table , QString const& name)
+{
+	for (int i =0; i < table->rowCount(); ++i)
+	{
+		if (table->item(i, LibraryColumns::Name)->text() == name)
+		{
+			for (int j = 0; j < table->columnCount(); ++j)
+			{
+				table->item(i, j)->setBackground(Qt::yellow);
+			}
+			return;
+		}
 	}
 }
 
@@ -1204,7 +1244,7 @@ void MainWindow::AddLibraryItem(QTableWidget* libraryList, QString const& name, 
 	libraryList->resizeColumnsToContents();
 }
 
-int MainWindow::GetSelectedRow(QTableWidget* table)
+int MainWindow::GetSelectedRow(QTableWidget* table) const
 {
 	return table->selectionModel()->currentIndex().row();
 }

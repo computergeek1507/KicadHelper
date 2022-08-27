@@ -168,7 +168,7 @@ void SymbolFinder::CreateSymbolList()
 {
     SymbolList.clear();
 
-    for(auto const& library : libraryList)
+    for(auto const& [level, library] : libraryList)
     {
         for(auto const& lib : library)
         {
@@ -190,6 +190,10 @@ void SymbolFinder::CreateSymbolList()
             if(!fps.empty())
             {
                 SymbolList.insert(lib.name, fps);
+            }
+            else 
+            {
+                emit SendLibraryError(level, lib.name);
             }
         }
     }

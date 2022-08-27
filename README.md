@@ -27,9 +27,30 @@ Fifth Tab with Copy/Rename Kicad Files for generating new Kicad Project based on
 ### Commandline Interface
 
 Example:
-Opens Project
-Checks Footprints/Symbols
-Saves Results to file
+Opens Project, 
+Checks Footprints/Symbols, 
+Saves Results to file, 
 Exits
 
 KicadHelper.exe -p "D:\PB_16\PB_16v1\PB_16.kicad_pro" -c -o "D:\report.txt" -x
+
+### Building
+Uses C++17, QT 5.15, spdlog, and cMake.
+
+```git clone https://github.com/computergeek1507/KicadHelper.git```
+
+To build on Windows, use Visual Studio 2022
+
+```VS2022.bat```
+
+If you get a qt cmake error, update the QT location in batch file.
+
+To build on Linux with g++(tested on Mint Linux 21).
+
+```
+mkdir build
+cd build
+cmake ..
+cmake --build ..
+./KicadHelper
+```

@@ -527,6 +527,29 @@ void MainWindow::on_pbViewFpLibrary_clicked()
 	ViewList::Load(list, ui->twProjectFPLibraries->item(row, LibraryColumns::Name)->text());
 }
 
+void MainWindow::on_pbViewGlobalFpLibrary_clicked()
+{
+	int row = GetSelectedRow(ui->twGlobalFPLibraries);
+	if (-1 == row)
+	{
+		return;
+	}
+	auto list{ footprint_finder->GetFootprints(ui->twGlobalFPLibraries->item(row, LibraryColumns::URL)->text(),
+								ui->twGlobalFPLibraries->item(row, LibraryColumns::Type)->text()) };
+	ViewList::Load(list, ui->twGlobalFPLibraries->item(row, LibraryColumns::Name)->text());
+}
+
+void MainWindow::on_pbOpenGlobalFpLibrary_clicked()
+{
+	int row = GetSelectedRow(ui->twGlobalFPLibraries);
+	if (-1 == row)
+	{
+		return;
+	}
+	auto path = QFileInfo(footprint_finder->updatePath(ui->twGlobalFPLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
+	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
 void MainWindow::on_pbOpenFpLibrary_clicked()
 {
 	int row = GetSelectedRow(ui->twProjectFPLibraries);
@@ -579,6 +602,32 @@ void MainWindow::on_pbOpenSymLibrary_clicked()
 	}
 	auto path = QFileInfo(symbol_finder->updatePath(ui->twProjectSymLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
 	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void MainWindow::on_pbViewGlobalSymLibrary_clicked()
+{
+	int row = GetSelectedRow(ui->twGlobalSymLibraries);
+	if (-1 == row)
+	{
+		return;
+	}
+
+	auto list{ symbol_finder->GetSymbols(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text(),
+									ui->twGlobalSymLibraries->item(row, LibraryColumns::Type)->text()) };
+	ViewList::Load(list, ui->twGlobalSymLibraries->item(row, LibraryColumns::Name)->text());
+	
+}
+
+void MainWindow::on_pbOpenGlobalSymLibrary_clicked()
+{
+	int row = GetSelectedRow(ui->twGlobalSymLibraries);
+	if (-1 == row)
+	{
+		return;
+	}
+	auto path = QFileInfo(symbol_finder->updatePath(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
+	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+	
 }
 
 void MainWindow::on_pbSetPartsInSch_clicked()
@@ -709,21 +758,6 @@ void MainWindow::on_twProjectFPLibraries_cellDoubleClicked(int row, int column)
 	}
 }
 
-void MainWindow::on_twGlobalFPLibraries_cellDoubleClicked(int row, int column)
-{
-	if (column == LibraryColumns::URL)
-	{
-		auto path = QFileInfo(footprint_finder->updatePath(ui->twGlobalFPLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
-		QDesktopServices::openUrl(QUrl::fromLocalFile(path));
-	}
-	else if (column == LibraryColumns::Name)
-	{
-		auto list{ footprint_finder->GetFootprints(ui->twGlobalFPLibraries->item(row, LibraryColumns::URL)->text(),
-								ui->twGlobalFPLibraries->item(row, LibraryColumns::Type)->text()) };
-		ViewList::Load(list, ui->twGlobalFPLibraries->item(row, LibraryColumns::Name)->text());
-	}
-}
-
 void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
 {
 	auto header{ ui->twProjectSymLibraries->horizontalHeaderItem(column)->text() };
@@ -768,21 +802,6 @@ void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
 		{
 			symbol_finder->ChangeLibraryDescr(name, text, row);
 		}
-	}
-}
-
-void MainWindow::on_twGlobalSymLibraries_cellDoubleClicked(int row, int column)
-{
-	if (column == LibraryColumns::URL)
-	{
-		auto path = QFileInfo(symbol_finder->updatePath(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
-		QDesktopServices::openUrl(QUrl::fromLocalFile(path));
-	}
-	else if (column == LibraryColumns::Name)
-	{
-		auto list{ symbol_finder->GetSymbols(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text(),
-									ui->twGlobalSymLibraries->item(row, LibraryColumns::Type)->text()) };
-			ViewList::Load(list, ui->twGlobalSymLibraries->item(row, LibraryColumns::Name)->text());
 	}
 }
 

@@ -73,6 +73,9 @@ public Q_SLOTS:
     void on_pbViewFpLibrary_clicked();
     void on_pbOpenFpLibrary_clicked();
 
+    void on_pbViewGlobalFpLibrary_clicked();
+    void on_pbOpenGlobalFpLibrary_clicked();
+
     //3rd tab
     void on_pbReloadSymLibraries_clicked();
     void on_pbCheckSym_clicked();
@@ -82,6 +85,9 @@ public Q_SLOTS:
     void on_pbDeleteSymLibrary_clicked();
     void on_pbViewSymLibrary_clicked();
     void on_pbOpenSymLibrary_clicked();
+
+    void on_pbViewGlobalSymLibrary_clicked();
+    void on_pbOpenGlobalSymLibrary_clicked();
 
     //4nd tab
     void on_pbTextReplace_clicked();
@@ -96,10 +102,8 @@ public Q_SLOTS:
     void on_lwFiles_itemDoubleClicked(QListWidgetItem * item);
 
     void on_twProjectFPLibraries_cellDoubleClicked(int row, int column);
-    void on_twGlobalFPLibraries_cellDoubleClicked(int row, int column);
 
     void on_twProjectSymLibraries_cellDoubleClicked(int row, int column);
-    void on_twGlobalSymLibraries_cellDoubleClicked(int row, int column);
 
     void on_lwLogs_itemDoubleClicked(QListWidgetItem * item);
 

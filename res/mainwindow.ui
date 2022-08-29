@@ -104,7 +104,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tabPartNumber">
        <attribute name="title">
@@ -334,7 +334,7 @@
            <attribute name="title">
             <string>Global Libraries</string>
            </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_5">
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
             <item>
              <widget class="QTableWidget" name="twGlobalFPLibraries">
               <property name="selectionBehavior">
@@ -373,6 +373,45 @@
                </property>
               </column>
              </widget>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_10">
+              <item>
+               <widget class="QPushButton" name="pbViewGlobalFpLibrary">
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/table_go.png</normaloff>:/KicadHelper/icons/table_go.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pbOpenGlobalFpLibrary">
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/folder_table.png</normaloff>:/KicadHelper/icons/folder_table.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="verticalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
@@ -573,7 +612,7 @@
            <attribute name="title">
             <string>Global Libraries</string>
            </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_6">
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
             <item>
              <widget class="QTableWidget" name="twGlobalSymLibraries">
               <property name="selectionBehavior">
@@ -612,6 +651,45 @@
                </property>
               </column>
              </widget>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_5">
+              <item>
+               <widget class="QPushButton" name="pbViewGlobalSymLibrary">
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/table_go.png</normaloff>:/KicadHelper/icons/table_go.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pbOpenGlobalSymLibrary">
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="KicadHelper.qrc">
+                  <normaloff>:/KicadHelper/icons/folder_go.png</normaloff>:/KicadHelper/icons/folder_go.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="verticalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
@@ -847,7 +925,7 @@
      <x>0</x>
      <y>0</y>
      <width>1046</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

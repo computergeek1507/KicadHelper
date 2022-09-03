@@ -278,10 +278,14 @@ QStringList SymbolFinder::GetKicadSymbols(QString const& url) const
 	{
 		QString line = in.readLine();
 
-        QString const symbol = getLibSymbol( line);
+        QString symbol = getLibSymbol( line);
         if(symbol.isEmpty())
         {
             continue;
+        } 
+        if (symbol.contains(":"))
+        {
+            symbol = symbol.split(":")[1];
         }
 
         list.append(symbol);

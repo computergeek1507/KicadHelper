@@ -4,6 +4,7 @@
 
 #include "footprint_finder.h"
 #include "symbol_finder.h" 
+#include "threed_model_finder.h" 
 #include "schematic_adder.h"
 #include "text_replace.h"
 
@@ -93,6 +94,11 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(symbol_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddSymbolMsg );
 	connect(symbol_finder.get(), &LibraryBase::SendClearResults, this, &MainWindow::ClearSymbolMsgs );
 	connect(symbol_finder.get(), &LibraryBase::SendLibraryError, this, &MainWindow::SetSymbolLibraryError);
+
+	threed_model_finder = std::make_unique<ThreeDModelFinder>();
+	connect(threed_model_finder.get(), &LibraryBase::SendMessage, this, &MainWindow::LogMessage);
+	connect(threed_model_finder.get(), &LibraryBase::SendResult, this, &MainWindow::AddThreeDModelMsg);
+	connect(threed_model_finder.get(), &LibraryBase::SendClearResults, this, &MainWindow::ClearThreeDModelMsgs);
 
 	schematic_adder = std::make_unique<SchematicAdder>();
 	connect(schematic_adder.get(), &SchematicAdder::SendMessage, this, &MainWindow::LogMessage );
@@ -615,7 +621,6 @@ void MainWindow::on_pbViewGlobalSymLibrary_clicked()
 	auto list{ symbol_finder->GetSymbols(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text(),
 									ui->twGlobalSymLibraries->item(row, LibraryColumns::Type)->text()) };
 	ViewList::Load(list, ui->twGlobalSymLibraries->item(row, LibraryColumns::Name)->text());
-	
 }
 
 void MainWindow::on_pbOpenGlobalSymLibrary_clicked()
@@ -627,7 +632,23 @@ void MainWindow::on_pbOpenGlobalSymLibrary_clicked()
 	}
 	auto path = QFileInfo(symbol_finder->updatePath(ui->twGlobalSymLibraries->item(row, LibraryColumns::URL)->text())).absoluteDir().absolutePath();
 	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
-	
+}
+
+void MainWindow::on_pbCheck3DModels_clicked() 
+{
+	ClearThreeDModelMsgs();
+	threed_model_finder->CheckPCBs();
+}
+
+void MainWindow::on_pbFix3DModels_clicked() 
+{
+	QDir directory(ui->leLibraryFolder->text());
+	if (!directory.exists() || ui->leLibraryFolder->text().isEmpty())
+	{
+		LogMessage("Directory Doesn't Exist", spdlog::level::level_enum::warn);
+		return;
+	}
+	threed_model_finder->FixThreeDModels(ui->leLibraryFolder->text());
 }
 
 void MainWindow::on_pbSetPartsInSch_clicked()
@@ -881,6 +902,8 @@ void MainWindow::SetProject(QString const& project)
 
 	ClearSymbolLibrarys();
 	symbol_finder->LoadProject(proj.absoluteDir().absolutePath());
+
+	threed_model_finder->LoadProject(proj.absoluteDir().absolutePath());
 	AddRecentList(proj.absoluteFilePath());
 }
 
@@ -1266,6 +1289,15 @@ void MainWindow::ClearFootprintMsgs()
 			ui->twGlobalFPLibraries->item(i, j)->setBackground(ui->twGlobalFPLibraries->palette().base().color());
 		}
 	}
+}
+
+void MainWindow::AddThreeDModelMsg(QString const& message, bool error)
+{
+	AddResultMsg(ui->lw3DModelsResults, message, error);
+}
+void MainWindow::ClearThreeDModelMsgs() 
+{
+	ui->lw3DModelsResults->clear();
 }
 
 void MainWindow::AddLibraryItem(QTableWidget* libraryList, QString const& name, QString const& type, QString const& descr, QString const& path)

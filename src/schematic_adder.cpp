@@ -280,7 +280,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 
 		QFile::rename(schPath, schPath + "_old");
 	}
-	catch (std::exception ex)
+	catch (std::exception /*ex*/)
 	{
 		emit SendMessage(QString("Could not Create '%1_old'").arg(schPath), spdlog::level::level_enum::warn, schPath);
 	}

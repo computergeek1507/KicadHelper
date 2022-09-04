@@ -22,6 +22,7 @@ QT_END_NAMESPACE
 
 class FootprintFinder;
 class SymbolFinder;
+class ThreeDModelFinder;
 class SchematicAdder;
 class TextReplace;
 struct Mapping;
@@ -90,10 +91,14 @@ public Q_SLOTS:
     void on_pbOpenGlobalSymLibrary_clicked();
 
     //4nd tab
+    void on_pbCheck3DModels_clicked();
+    void on_pbFix3DModels_clicked();
+
+    //5th tab
     void on_pbTextReplace_clicked();
     void on_pbAddMap_clicked();
     void on_pbRemoveMap_clicked();
-    //5th tab
+    //6th tab
     void on_pbRename_clicked();
 
     void on_lwWords_cellDoubleClicked(int row, int column);
@@ -130,6 +135,9 @@ public Q_SLOTS:
     void AddSymbolMsg( QString const& message, bool error);
     void ClearSymbolMsgs();
 
+    void AddThreeDModelMsg(QString const& message, bool error);
+    void ClearThreeDModelMsgs();
+
     void RedrawPartList(bool save);
     void RedrawMappingList(bool save);
 
@@ -147,6 +155,7 @@ private:
     std::unique_ptr<QSettings> settings{ nullptr };
     std::unique_ptr<FootprintFinder> footprint_finder{ nullptr };
     std::unique_ptr<SymbolFinder> symbol_finder{ nullptr };
+    std::unique_ptr<ThreeDModelFinder> threed_model_finder{ nullptr };
     std::unique_ptr<SchematicAdder> schematic_adder{ nullptr };
     std::unique_ptr<TextReplace> text_replace{ nullptr };
 

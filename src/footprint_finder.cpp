@@ -107,7 +107,7 @@ void FootprintFinder::CheckSchematic(QString const& schPath)
             reference = ref;
         }
 
-        QString footprint = getSchFootprint( line);
+        QString footprint = getSchFootprint( line );
         if(footprint.isEmpty())
         {
             continue;

@@ -104,7 +104,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="tabPartNumber">
        <attribute name="title">
@@ -757,6 +757,62 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tab3DModels">
+       <attribute name="title">
+        <string>3D Models</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_9">
+          <item>
+           <widget class="QPushButton" name="pbCheck3DModels">
+            <property name="text">
+             <string>Check 3D Models Paths In PCB</string>
+            </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/tick.png</normaloff>:/KicadHelper/icons/tick.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pbFix3DModels">
+            <property name="text">
+             <string>Auto Update Paths</string>
+            </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/find.png</normaloff>:/KicadHelper/icons/find.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QListWidget" name="lw3DModelsResults">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="tabReplace">
        <attribute name="title">
         <string>Text Replace</string>
@@ -925,7 +981,7 @@
      <x>0</x>
      <y>0</y>
      <width>1046</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

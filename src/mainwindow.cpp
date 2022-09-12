@@ -1459,6 +1459,10 @@ void MainWindow::ProcessCommandLine()
             "Check Schematic Footprints.");
     parser.addOption(checkFpOption);
 
+	QCommandLineOption check3dOption(QStringList() << "3" << "check3d",
+            "Check 3D Model Paths.");
+    parser.addOption(check3dOption);
+
 	QCommandLineOption fixSymOption(QStringList() << "y" << "findsym",
 		"Attempt to Find Schematic Symbols.");
 	parser.addOption(fixSymOption);
@@ -1466,6 +1470,10 @@ void MainWindow::ProcessCommandLine()
 	QCommandLineOption fixFpOption(QStringList() << "i" << "findfp",
 		"Attempt to Find Schematic Footprints.");
 	parser.addOption(fixFpOption);
+
+	QCommandLineOption fix3dOption(QStringList() << "d" << "find3d",
+            "Fix 3D Model Paths.");
+    parser.addOption(fix3dOption);
 
 	QCommandLineOption replaceOption(QStringList() << "r" << "replace",
             "File to do text Repace in.",
@@ -1548,6 +1556,16 @@ void MainWindow::ProcessCommandLine()
 	if (parser.isSet(fixOption) || parser.isSet(fixSymOption))
 	{
 		on_pbFixSym_clicked();
+	}
+
+	if(parser.isSet(checkOption) || parser.isSet(check3dOption))
+	{
+		on_pbCheck3DModels_clicked();
+	}
+
+	if (parser.isSet(fixOption) || parser.isSet(fix3dOption))
+	{
+		on_pbFix3DModels_clicked();
 	}
 
 	if (!parser.value(bomOption).isEmpty())

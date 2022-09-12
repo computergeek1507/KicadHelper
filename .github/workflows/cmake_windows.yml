@@ -28,6 +28,7 @@ jobs:
       with:
         version: '5.15.2'
         target: 'desktop'
+        setup-python: 'false'
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/cmake_vs -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}

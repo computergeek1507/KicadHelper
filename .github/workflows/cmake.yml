@@ -3,6 +3,13 @@ name: CMake
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - '.github/workflows/*.yml'
+      - 'res/images/*'
+      - '*.md'
+      - '*.csv'
+      - '*.json'
+
   pull_request:
     branches: [ "main" ]
 

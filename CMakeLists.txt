@@ -35,6 +35,7 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 configure_file(src/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
+configure_file(res/installer/kicad_helper.iss.in ${CMAKE_CURRENT_SOURCE_DIR}/res/installer/kicad_helper.iss)
 
 file( GLOB_RECURSE BASE_SRC src/*cpp src/*h)
 file( GLOB_RECURSE BASE_RES res/*ui res/*qrc)

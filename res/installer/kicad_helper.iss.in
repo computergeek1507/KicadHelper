@@ -1,5 +1,5 @@
-#define MyTitleName "KicadHelper"
-#define Version "0.0.1"
+#define MyTitleName "@PROJECT_NAME@"
+#define Version "@PROJECT_VERSION@"
 
 [Setup]
 DisableDirPage=no   
@@ -22,7 +22,7 @@ OutputBaseFilename={#MyTitleName}_{#Version}
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "Do you want to create desktop icon?"; Flags: checkablealone
 
 [Files]
-Source: "..\..\cmake_vs\Release\KicadHelper.exe"; DestDir: "{app}"
+Source: "..\..\cmake_vs\Release\{#MyTitleName}.exe"; DestDir: "{app}"
 Source: "..\kicad.ico"; DestDir: "{app}"
 Source: "..\..\cmake_vs\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\cmake_vs\Release\platforms\qwindows.dll"; DestDir: "{app}\platforms\"; Flags: ignoreversion  
@@ -31,4 +31,4 @@ Source: "..\..\cmake_vs\Release\styles\*.dll"; DestDir: "{app}\styles\"; Flags: 
 Source: "..\..\cmake_vs\Release\translations\*.qm"; DestDir: "{app}\translations\"; Flags: ignoreversion
 
 [Run]
-Filename: "{app}\KicadHelper.exe"; Description: "Launch application"; Flags: postinstall nowait skipifsilent 
+Filename: "{app}\{#MyTitleName}.exe"; Description: "Launch application"; Flags: postinstall nowait skipifsilent 

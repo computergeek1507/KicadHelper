@@ -62,6 +62,7 @@ bool FootprintFinder::CheckSchematics()
 
     missingFootprintList.clear();
 
+
     auto const& kicadFiles {directory.entryInfoList(QStringList() << "*.kicad_sch" , QDir::Files)};
 	for (auto const& file : kicadFiles)
 	{
@@ -260,7 +261,7 @@ QStringList FootprintFinder::GetKicadFootprints(QString const& url) const
     return list;
 }
 
-bool FootprintFinder::FixFootprints(QString const& folder)
+bool FootprintFinder::FixFootprints(QString const& libfolder)
 {
     bool worked{false};
     /*
@@ -272,11 +273,63 @@ bool FootprintFinder::FixFootprints(QString const& folder)
     if (missingFootprintList.empty())
     {
         CheckSchematics();
-    }
+    }    
 
-    if(ConvertAllPathsToRelative(folder))
+    //find missing libs
+    for (auto& library : libraryList[PROJECT_LIB])
     {
-        QString localLibPath {m_projectFolder + "/fp-lib-table"};
+        if (library.type == LEGACY_LIB)
+        {
+            QString path{ updatePath(library.url) };
+            if (QFile::exists(path))
+            {
+                continue;
+            }
+            QFileInfo const libraryPath{ path };
+            QString FoundKicdLibPath = FindRecurseFile(libfolder, QStringList(libraryPath.fileName()));
+            if (!FoundKicdLibPath.isEmpty())
+            {
+                auto newPath{ ConvertToRelativePath(FoundKicdLibPath,libfolder) };
+                library.url = newPath;
+                worked = true;
+            }
+        }
+        else if (library.type == KICAD_LIB)
+        {
+            QDir directory(updatePath(library.url));
+            if (directory.exists())
+            {
+                continue;
+            }
+            QString FoundKicdLibPath = FindRecurseDirectory(libfolder, directory.dirName());
+            if (!FoundKicdLibPath.isEmpty())
+            {
+                auto newPath{ ConvertToRelativePath(FoundKicdLibPath,libfolder) };
+                library.url = newPath;
+                worked = true;
+            }
+            //QDir dir(file.dir().absolutePath());
+            //dir.cdUp();
+            //info.name = dir.dirName();
+            //info.url = ConvertToRelativePath(file.dir().absolutePath(), libFolder);
+        }  
+    }
+    if (worked)
+    {
+        QString localLibPath{ m_projectFolder + "/fp-lib-table" };
+        SaveLibraryTable(localLibPath);
+
+        emit SendClearLibrary(PROJECT_LIB);
+        libraryList[PROJECT_LIB].clear();
+        getProjectLibraries();
+        emit SendClearResults();
+        CheckSchematics();
+    }
+    worked = false;
+
+    if (ConvertAllPathsToRelative(libfolder))
+    {
+        QString localLibPath{ m_projectFolder + "/fp-lib-table" };
         SaveLibraryTable(localLibPath);
 
         emit SendClearLibrary(PROJECT_LIB);
@@ -288,11 +341,12 @@ bool FootprintFinder::FixFootprints(QString const& folder)
 
     for (auto const& footprint : missingFootprintList)
     {
-        if(AttemptToFindFootprintPath(footprint,folder))
+        if(AttemptToFindFootprintPath(footprint, libfolder))
         {
             worked = true;
         }
     }
+
     if(worked)
     {
         QString localLibPath {m_projectFolder + "/fp-lib-table"};

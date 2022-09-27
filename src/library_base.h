@@ -30,6 +30,7 @@ public:
 	virtual void ChangeLibraryName(QString const& oldName, QString const& newName, int row);
 	virtual void ChangeLibraryPath(QString const& name, QString const& newPath, int row);
 	virtual void ChangeLibraryDescr(QString const& name, QString const& newDescr, int row);
+	virtual void ChangeLibraryType(QString const& name, QString const& newType, int row);
 	virtual void RemoveLibrary(QString const& name);
 	virtual void ImportLibrary(QString const& path, QString const& libFolder);
 

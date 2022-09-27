@@ -175,6 +175,23 @@ void LibraryBase::ChangeLibraryDescr(QString const& name, QString const& newDesc
     }
 }
 
+void LibraryBase::ChangeLibraryType(QString const& name, QString const& newType, int row)
+{
+    if (auto const found{
+            std::find_if(libraryList[PROJECT_LIB].begin(), libraryList[PROJECT_LIB].end(), [&](auto const& elem)
+            { return elem.name == name; })
+        };
+        found != libraryList[PROJECT_LIB].end())
+    {
+        auto index = std::distance(libraryList[PROJECT_LIB].begin(), found);
+        libraryList[PROJECT_LIB][index].type = newType;
+        emit SendUpdateLibraryRow(PROJECT_LIB, libraryList[PROJECT_LIB][index].name,
+            libraryList[PROJECT_LIB][index].type, libraryList[PROJECT_LIB][index].descr,
+            libraryList[PROJECT_LIB][index].url, row);
+        SaveLibraryTable(getProjectLibraryPath());
+    }
+}
+
 void LibraryBase::RemoveLibrary(QString const& name)
 {
      if (auto const found{

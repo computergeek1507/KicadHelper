@@ -777,6 +777,26 @@ void MainWindow::on_twProjectFPLibraries_cellDoubleClicked(int row, int column)
 			footprint_finder->ChangeLibraryDescr(name, text, row);
 		}
 	}
+	else if (column == LibraryColumns::Type)
+	{
+		auto name{ ui->twProjectSymLibraries->item(row, LibraryColumns::Name)->text() };
+		auto value{ ui->twProjectSymLibraries->item(row, LibraryColumns::Type)->text() };
+
+		bool ok;
+
+		//getItem(QWidget * parent, 
+		//const QString & title, const QString & label, const QStringList & items, int current = 0, bool editable = true, bool* ok = nullptr, Qt::WindowFlags flags = Qt::WindowFlags(), Qt::InputMethodHints inputMethodHints = Qt::ImhNone)
+		QStringList items;
+		items << LEGACY_LIB << KICAD_LIB;
+		int index = items.indexOf(value);
+		QString text = QInputDialog::getItem(this, header,
+			header, items,
+			index, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			symbol_finder->ChangeLibraryType(name, text, row);
+		}
+	}
 }
 
 void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
@@ -822,6 +842,26 @@ void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
 		if (ok && !text.isEmpty() && value != text)
 		{
 			symbol_finder->ChangeLibraryDescr(name, text, row);
+		}
+	}
+	else if (column == LibraryColumns::Type)
+	{
+		auto name{ ui->twProjectSymLibraries->item(row, LibraryColumns::Name)->text() };
+		auto value{ ui->twProjectSymLibraries->item(row, LibraryColumns::Type)->text() };
+
+		bool ok;
+
+		//getItem(QWidget * parent, 
+		//const QString & title, const QString & label, const QStringList & items, int current = 0, bool editable = true, bool* ok = nullptr, Qt::WindowFlags flags = Qt::WindowFlags(), Qt::InputMethodHints inputMethodHints = Qt::ImhNone)
+		QStringList items;
+		items << LEGACY_LIB << KICAD_LIB;
+		int index = items.indexOf(value);
+		QString text = QInputDialog::getItem(this, header,
+			header, items,
+			index, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			symbol_finder->ChangeLibraryType(name, text, row);
 		}
 	}
 }

@@ -17,7 +17,7 @@ public:
     virtual ~SymbolFinder() {}
 
 	bool CheckSchematics();
-	bool FixSymbols(QString const& folder);
+	bool FixSymbols(QString const& libfolder);
 
 	QStringList GetSymbols(QString const& url, QString const& type) const;
 

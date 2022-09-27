@@ -294,7 +294,7 @@ QStringList SymbolFinder::GetKicadSymbols(QString const& url) const
     return list;
 }
 
-bool SymbolFinder::FixSymbols(QString const& folder)
+bool SymbolFinder::FixSymbols(QString const& libfolder)
 {
     bool worked{false};
     /*
@@ -308,7 +308,38 @@ bool SymbolFinder::FixSymbols(QString const& folder)
         CheckSchematics();
     }
 
-    if(ConvertAllPathsToRelative(folder))
+    //find missing libs
+    for (auto& library : libraryList[PROJECT_LIB])
+    {
+        QString path{ updatePath(library.url) };
+        if (QFile::exists(path))
+        {
+            continue;
+        }
+
+        QFileInfo const libraryPath{ path };
+        QString FoundKicdLibPath = FindRecurseFile(libfolder, QStringList(libraryPath.fileName()));
+        if (!FoundKicdLibPath.isEmpty())
+        {
+            auto newPath{ ConvertToRelativePath(FoundKicdLibPath,libfolder) };
+            library.url = newPath;
+            worked = true;
+        }
+    }
+
+    if (worked)
+    {
+        SaveLibraryTable(getProjectLibraryPath());
+
+        emit SendClearLibrary(PROJECT_LIB);
+        libraryList[PROJECT_LIB].clear();
+        getProjectLibraries();
+        emit SendClearResults();
+        CheckSchematics();
+    }
+    worked = false;
+
+    if(ConvertAllPathsToRelative(libfolder))
     {
         SaveLibraryTable(getProjectLibraryPath());
 
@@ -321,11 +352,12 @@ bool SymbolFinder::FixSymbols(QString const& folder)
 
     for (auto const& footprint : missingSymbolList)
     {
-        if(AttemptToFindSymbolPath(footprint,folder))
+        if(AttemptToFindSymbolPath(footprint, libfolder))
         {
             worked = true;
         }
     }
+
     if(worked)
     {
         SaveLibraryTable(getProjectLibraryPath());

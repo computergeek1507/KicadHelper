@@ -19,7 +19,7 @@ public:
     ~FootprintFinder() {}
 
 	bool CheckSchematics();
-	bool FixFootprints(QString const& folder);
+	bool FixFootprints(QString const& libfolder);
 	QStringList GetFootprints(QString const& url, QString const& type) const;
 
 private:

@@ -27,24 +27,17 @@
       <property name="verticalSpacing">
        <number>3</number>
       </property>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="leProjectFolder">
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-       </widget>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="leLibraryFolder"/>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
+      <item row="2" column="2">
+       <widget class="QPushButton" name="pbLibraryFolder">
         <property name="text">
-         <string>Project:</string>
+         <string/>
         </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="leProject">
-        <property name="readOnly">
-         <bool>true</bool>
+        <property name="icon">
+         <iconset resource="KicadHelper.qrc">
+          <normaloff>:/KicadHelper/icons/folder_go.png</normaloff>:/KicadHelper/icons/folder_go.png</iconset>
         </property>
        </widget>
       </item>
@@ -78,8 +71,19 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="leLibraryFolder"/>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="leProject">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="leProjectFolder">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_2">
@@ -88,14 +92,10 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="pbLibraryFolder">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
         <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="KicadHelper.qrc">
-          <normaloff>:/KicadHelper/icons/folder_go.png</normaloff>:/KicadHelper/icons/folder_go.png</iconset>
+         <string>Project:</string>
         </property>
        </widget>
       </item>
@@ -104,7 +104,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tabPartNumber">
        <attribute name="title">
@@ -829,15 +829,39 @@
          <widget class="QListWidget" name="lwFiles"/>
         </item>
         <item>
-         <widget class="QPushButton" name="pbTextReplace">
-          <property name="text">
-           <string>Run Text Replace</string>
-          </property>
-          <property name="icon">
-           <iconset resource="KicadHelper.qrc">
-            <normaloff>:/KicadHelper/icons/tag.png</normaloff>:/KicadHelper/icons/tag.png</iconset>
-          </property>
-         </widget>
+         <layout class="QHBoxLayout" name="horizontalLayout_10">
+          <item>
+           <widget class="QPushButton" name="pbTextReplace">
+            <property name="text">
+             <string>Run Text Replace</string>
+            </property>
+            <property name="icon">
+             <iconset resource="KicadHelper.qrc">
+              <normaloff>:/KicadHelper/icons/tag.png</normaloff>:/KicadHelper/icons/tag.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="cbRegex">
+            <property name="text">
+             <string>Use Regex</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_6">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
         <item>
          <widget class="QTableWidget" name="lwWords">

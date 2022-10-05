@@ -341,7 +341,7 @@ void MainWindow::on_pbRename_clicked()
 				QFile::rename(file.filePath(), newName);
 			}
 			QThread::msleep(100);
-			ReplaceInFile(newName, replaceList);
+			ReplaceInFile(newName, replaceList, false);
 		}
 		catch (std::exception ex)
 		{
@@ -389,6 +389,7 @@ void MainWindow::on_pbTextReplace_clicked()
 		LogMessage("Replace List is empty", spdlog::level::level_enum::warn);
 		return;
 	}
+	bool useRegex = ui->cbRegex->isChecked();
 
 	QStringList files ;
 
@@ -406,7 +407,7 @@ void MainWindow::on_pbTextReplace_clicked()
 			LogMessage("File Doesn't Exist", spdlog::level::level_enum::warn);
 			continue;
 		}
-		ReplaceInFile(file, text_replace->getReplaceList());
+		ReplaceInFile(file, text_replace->getReplaceList(), useRegex);
 		LogMessage(QString("Updating Text on %1 ").arg(file), spdlog::level::level_enum::debug, file);
 	}
 }
@@ -777,6 +778,26 @@ void MainWindow::on_twProjectFPLibraries_cellDoubleClicked(int row, int column)
 			footprint_finder->ChangeLibraryDescr(name, text, row);
 		}
 	}
+	else if (column == LibraryColumns::Type)
+	{
+		auto name{ ui->twProjectSymLibraries->item(row, LibraryColumns::Name)->text() };
+		auto value{ ui->twProjectSymLibraries->item(row, LibraryColumns::Type)->text() };
+
+		bool ok;
+
+		//getItem(QWidget * parent, 
+		//const QString & title, const QString & label, const QStringList & items, int current = 0, bool editable = true, bool* ok = nullptr, Qt::WindowFlags flags = Qt::WindowFlags(), Qt::InputMethodHints inputMethodHints = Qt::ImhNone)
+		QStringList items;
+		items << LEGACY_LIB << KICAD_LIB;
+		int index = items.indexOf(value);
+		QString text = QInputDialog::getItem(this, header,
+			header, items,
+			index, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			symbol_finder->ChangeLibraryType(name, text, row);
+		}
+	}
 }
 
 void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
@@ -822,6 +843,26 @@ void MainWindow::on_twProjectSymLibraries_cellDoubleClicked(int row, int column)
 		if (ok && !text.isEmpty() && value != text)
 		{
 			symbol_finder->ChangeLibraryDescr(name, text, row);
+		}
+	}
+	else if (column == LibraryColumns::Type)
+	{
+		auto name{ ui->twProjectSymLibraries->item(row, LibraryColumns::Name)->text() };
+		auto value{ ui->twProjectSymLibraries->item(row, LibraryColumns::Type)->text() };
+
+		bool ok;
+
+		//getItem(QWidget * parent, 
+		//const QString & title, const QString & label, const QStringList & items, int current = 0, bool editable = true, bool* ok = nullptr, Qt::WindowFlags flags = Qt::WindowFlags(), Qt::InputMethodHints inputMethodHints = Qt::ImhNone)
+		QStringList items;
+		items << LEGACY_LIB << KICAD_LIB;
+		int index = items.indexOf(value);
+		QString text = QInputDialog::getItem(this, header,
+			header, items,
+			index, &ok);
+		if (ok && !text.isEmpty() && value != text)
+		{
+			symbol_finder->ChangeLibraryType(name, text, row);
 		}
 	}
 }
@@ -980,7 +1021,7 @@ void MainWindow::UpdateMappingRow(int row)
 	text_replace->SaveJsonFile(appdir + "/mapping.json");
 }
 
-void MainWindow::ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList)
+void MainWindow::ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList, bool regex)
 {
 	try
 	{
@@ -1008,7 +1049,14 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<Mapping> con
 			auto newline = line;
 			for (auto const& mapp : replaceList)
 			{
-				newline.replace(QRegularExpression(mapp.from), mapp.to);
+				if (regex) 
+				{
+					newline.replace(QRegularExpression(mapp.from), mapp.to);
+				}
+				else
+				{
+					newline.replace(mapp.from, mapp.to);
+				}
 			}
 			if(newline != line)
 			{
@@ -1459,6 +1507,10 @@ void MainWindow::ProcessCommandLine()
             "Check Schematic Footprints.");
     parser.addOption(checkFpOption);
 
+	QCommandLineOption check3dOption(QStringList() << "3" << "check3d",
+            "Check 3D Model Paths.");
+    parser.addOption(check3dOption);
+
 	QCommandLineOption fixSymOption(QStringList() << "y" << "findsym",
 		"Attempt to Find Schematic Symbols.");
 	parser.addOption(fixSymOption);
@@ -1466,6 +1518,10 @@ void MainWindow::ProcessCommandLine()
 	QCommandLineOption fixFpOption(QStringList() << "i" << "findfp",
 		"Attempt to Find Schematic Footprints.");
 	parser.addOption(fixFpOption);
+
+	QCommandLineOption fix3dOption(QStringList() << "d" << "find3d",
+            "Fix 3D Model Paths.");
+    parser.addOption(fix3dOption);
 
 	QCommandLineOption replaceOption(QStringList() << "r" << "replace",
             "File to do text Repace in.",
@@ -1522,7 +1578,7 @@ void MainWindow::ProcessCommandLine()
 
 	if(!parser.value(replaceOption).isEmpty() && QFile::exists(parser.value(replaceOption)))
 	{
-		ReplaceInFile(parser.value(replaceOption), text_replace->getReplaceList());
+		ReplaceInFile(parser.value(replaceOption), text_replace->getReplaceList(), false);
 	}
 
 	if(parser.isSet(addOption))
@@ -1548,6 +1604,16 @@ void MainWindow::ProcessCommandLine()
 	if (parser.isSet(fixOption) || parser.isSet(fixSymOption))
 	{
 		on_pbFixSym_clicked();
+	}
+
+	if(parser.isSet(checkOption) || parser.isSet(check3dOption))
+	{
+		on_pbCheck3DModels_clicked();
+	}
+
+	if (parser.isSet(fixOption) || parser.isSet(fix3dOption))
+	{
+		on_pbFix3DModels_clicked();
 	}
 
 	if (!parser.value(bomOption).isEmpty())

@@ -1,6 +1,6 @@
 ### KicadHelper
 
-This tool 'helps' me manager/fix Kicad Projects.
+This tool 'helps' manager/fix Kicad Projects.
 
 ![Gif](/res/images/find_fp.gif)
 

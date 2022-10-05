@@ -29,6 +29,7 @@
 #include <QThread>
 #include <QInputDialog>
 #include <QCommandLineParser>
+#include <QStandardPaths>
 #include <QTimer>
 
 #include "spdlog/spdlog.h"

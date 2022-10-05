@@ -40,10 +40,17 @@ configure_file(res/installer/kicad_helper.iss.in ${CMAKE_CURRENT_SOURCE_DIR}/res
 file( GLOB_RECURSE BASE_SRC src/*cpp src/*h)
 file( GLOB_RECURSE BASE_RES res/*ui res/*qrc)
 
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt6_wrap_ui(BASE_SRC res/addmapping.ui)
+    qt6_wrap_ui(BASE_SRC res/addpartnumber.ui)
+    qt6_wrap_ui(BASE_SRC res/mainwindow.ui)
+    qt6_wrap_ui(BASE_SRC res/viewlist.ui)
+else()
 qt5_wrap_ui(BASE_SRC res/addmapping.ui)
 qt5_wrap_ui(BASE_SRC res/addpartnumber.ui)
 qt5_wrap_ui(BASE_SRC res/mainwindow.ui)
 qt5_wrap_ui(BASE_SRC res/viewlist.ui)
+endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(${PROJECT_NAME}
@@ -83,10 +90,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(${PROJECT_NAME})
-endif()
-
 target_sources(${PROJECT_NAME} PRIVATE res/resource.rc)
 
 if(WIN32)
@@ -96,7 +99,11 @@ endif()
 source_group(src FILES ${BASE_SRC})
 source_group(res FILES ${BASE_RES})
 
-if(WIN32)
-windeployqt(${PROJECT_NAME})
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_finalize_executable(${PROJECT_NAME})
+ else()   
+    if(WIN32)
+        windeployqt(${PROJECT_NAME})
+    endif()
 endif()
 

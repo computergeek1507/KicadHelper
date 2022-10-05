@@ -69,7 +69,8 @@ void ThreeDModelFinder::CheckPCB(QString const& pcbPath)
 		{
 			continue;
 		}
-		if (!model.startsWith("$"))
+		//auto fullPath = updatePath(model);
+		if (!model.startsWith("$") || model.startsWith("${KISYS3DMOD}"))
 		{
 			if (!incorrectThreeDModelFileList.contains(pcbPath))
 			{
@@ -158,7 +159,13 @@ bool ThreeDModelFinder::AttemptToFixThreeDModelFile(QString const& pcbPath, QStr
 			reference = ref;
 		}
 
-		QString const model = getThreeDModelPath(line);
+		QString model = getThreeDModelPath(line);
+
+		if (!model.isEmpty() && model.startsWith("${KISYS3DMOD}"))
+		{
+			outLine = outLine.replace("${KISYS3DMOD}", "${KICAD6_3DMODEL_DIR}");
+			emit SendMessage("Updating '${KISYS3DMOD}' to '${KICAD6_3DMODEL_DIR}'", spdlog::level::level_enum::debug, QString());
+		}
 
 		if (!model.isEmpty() && !model.startsWith("$"))
 		{

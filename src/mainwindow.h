@@ -176,7 +176,7 @@ private:
     void SetProject(QString const& project);
     void SetLibrary(QString const& library);
 
-    void ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList);
+    void ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList, bool regex);
     void CopyRecursive(const std::filesystem::path& src, const std::filesystem::path& target) ;
     void MoveRecursive(const std::filesystem::path& src, const std::filesystem::path& target, bool createRoot = true);
 

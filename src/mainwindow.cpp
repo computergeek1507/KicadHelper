@@ -341,7 +341,7 @@ void MainWindow::on_pbRename_clicked()
 				QFile::rename(file.filePath(), newName);
 			}
 			QThread::msleep(100);
-			ReplaceInFile(newName, replaceList);
+			ReplaceInFile(newName, replaceList, false);
 		}
 		catch (std::exception ex)
 		{
@@ -389,6 +389,7 @@ void MainWindow::on_pbTextReplace_clicked()
 		LogMessage("Replace List is empty", spdlog::level::level_enum::warn);
 		return;
 	}
+	bool useRegex = ui->cbRegex->isChecked();
 
 	QStringList files ;
 
@@ -406,7 +407,7 @@ void MainWindow::on_pbTextReplace_clicked()
 			LogMessage("File Doesn't Exist", spdlog::level::level_enum::warn);
 			continue;
 		}
-		ReplaceInFile(file, text_replace->getReplaceList());
+		ReplaceInFile(file, text_replace->getReplaceList(), useRegex);
 		LogMessage(QString("Updating Text on %1 ").arg(file), spdlog::level::level_enum::debug, file);
 	}
 }
@@ -1020,7 +1021,7 @@ void MainWindow::UpdateMappingRow(int row)
 	text_replace->SaveJsonFile(appdir + "/mapping.json");
 }
 
-void MainWindow::ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList)
+void MainWindow::ReplaceInFile(QString const& filePath, std::vector<Mapping> const& replaceList, bool regex)
 {
 	try
 	{
@@ -1048,7 +1049,14 @@ void MainWindow::ReplaceInFile(QString const& filePath, std::vector<Mapping> con
 			auto newline = line;
 			for (auto const& mapp : replaceList)
 			{
-				newline.replace(QRegularExpression(mapp.from), mapp.to);
+				if (regex) 
+				{
+					newline.replace(QRegularExpression(mapp.from), mapp.to);
+				}
+				else
+				{
+					newline.replace(mapp.from, mapp.to);
+				}
 			}
 			if(newline != line)
 			{
@@ -1570,7 +1578,7 @@ void MainWindow::ProcessCommandLine()
 
 	if(!parser.value(replaceOption).isEmpty() && QFile::exists(parser.value(replaceOption)))
 	{
-		ReplaceInFile(parser.value(replaceOption), text_replace->getReplaceList());
+		ReplaceInFile(parser.value(replaceOption), text_replace->getReplaceList(), false);
 	}
 
 	if(parser.isSet(addOption))

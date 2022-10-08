@@ -31,3 +31,5 @@
 *.out
 *.app
 /src/config.h
+res/installer/kicad_helper.iss
+CMakeLists.txt.user

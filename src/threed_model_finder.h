@@ -24,7 +24,7 @@ public:
 	void LoadProject(QString const& folder) override;
 
 private:
-	void SaveLibraryTable(QString const& fileName) { }
+    void SaveLibraryTable(QString const& fileName) override { }
 
 	QString getProjectLibraryPath() const override { return QString(); }
 	QString getGlobalLibraryPath() const override { return QString(); }

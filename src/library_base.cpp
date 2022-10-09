@@ -263,7 +263,7 @@ QString LibraryBase::getSchFootprint(QString const& line ) const
     {
         return QString();
     }
-    int nstr =stInd + prop.size() + 1;
+    int nstr = stInd + prop.size() + 1;
     QString value = line.mid(nstr, endInd - nstr - 1);
 
     value = kicad_utils::CleanQuotes(value);
@@ -285,7 +285,7 @@ QString LibraryBase::getSchReference(QString const& line ) const
     {
         return QString();
     }
-    int nstr=stInd + prop.size() + 1;
+    int nstr = stInd + prop.size() + 1;
     QString value = line.mid(nstr, endInd - nstr - 1);
 
     value = kicad_utils::CleanQuotes(value);
@@ -307,7 +307,7 @@ QString LibraryBase::getSchSymbol(QString const& line ) const
     {
         return QString();
     }
-    int nstr =stInd + prop.size() + 1;
+    int nstr = stInd + prop.size() + 1;
     QString value = line.mid(nstr, endInd - nstr - 1);
 
     value = kicad_utils::CleanQuotes(value);
@@ -329,7 +329,7 @@ QString LibraryBase::getLibSymbol(QString const& line ) const
     {
         return QString();
     }
-    int nstr =stInd + prop.size() + 1;
+    int nstr = stInd + prop.size() + 1;
     QString value = line.mid(nstr, endInd - nstr - 1);
 
     value = kicad_utils::CleanQuotes(value);
@@ -345,7 +345,7 @@ QString LibraryBase::getLibParamter(QString const& parm, QString const& line ) c
     {
         return QString();
     }
-    int nstr =stInd + parm.length() + 2;
+    int nstr = stInd + parm.length() + 2;
     QString value = line.mid(nstr, endInd - nstr);
 
     value = kicad_utils::CleanQuotes(value);

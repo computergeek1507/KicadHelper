@@ -238,7 +238,7 @@ QString ThreeDModelFinder::getThreeDModelPath(QString const& line) const
 	{
 		return QString();
 	}
-    int nstr =  stInd + prop.size() + 1;
+	int nstr = stInd + prop.size() + 1;
 	QString value = line.mid(nstr, endInd - nstr - 1);
 
 	value = kicad_utils::CleanQuotes(value);

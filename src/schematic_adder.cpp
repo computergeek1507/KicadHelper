@@ -22,7 +22,7 @@ SchematicAdder::SchematicAdder()
 	// R"(\\(property\\s\\"(.*)\\"\s\\"(.*)\\"\s\\(id\\s(\\d +)\\)\\s\\(at\\s(-?\\d+.\\d+\\s-?\\d+.\\d+)\s\\d+\\)"
 	//\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\)
 	propRx = QRegularExpression (
-		R"(\(property\s\"(.*)\"\s\"(.*)\"\s\(id\s(\d+)\)\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\))"
+		R"(\(property\s\"(.*)\"\s\"(.*)\"\s\(at\s(-?\d+(?:.\d+)?\s-?\d+(?:.\d+)?)\s\d+\))"
 	);
 	pinRx = QRegularExpression (R"(\(pin\s\"(.*)\"\s\()");
 }
@@ -91,7 +91,7 @@ bool SchematicAdder::AddPartNumbersToSchematics(QString const& schDir) const
 
 void SchematicAdder::UpdateSchematic(QString const& schPath) const
 {
-	int lastID{ -1 };
+	//int lastID{ -1 };
 	QString lastLoc;
 	QString lastDigikey;
 	QString newDigikey;
@@ -134,8 +134,8 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 		{
 			auto key = m.captured(1);
 			auto	value = m.captured(2);
-			auto slastID = m.captured(3);
-			lastID = m.captured(3).toInt();
+			//auto slastID = m.captured(3);
+			//lastID = m.captured(3).toInt();
 
 			if (key == "Digi-Key_PN")
 			{
@@ -170,7 +170,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 
 			if (key == "Reference")
 			{
-				lastLoc = m.captured(4);
+				lastLoc = m.captured(3);
 				lastRef = value;
 			}
 			if (key == "Value")
@@ -226,35 +226,31 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 
 		if (pm.hasMatch())
 		{
-			if ((addDigi || addLcsc || addMPN) && !lastLoc.isEmpty() && lastID != -1)
+			if ((addDigi || addLcsc || addMPN) && !lastLoc.isEmpty())
 			{
-				int newid = lastID + 1;
 				if (addDigi)
 				{
 					emit SendMessage(QString("Adding '%1' DigiKey '%2'").arg(lastRef).arg(newDigikey), spdlog::level::level_enum::debug, QString());
-					QString newTxt = QString("    (property \"Digi-Key_PN\" \"%1\" (id %2) (at %3 0)").arg(newDigikey).arg(newid).arg(lastLoc);
+					QString newTxt = QString("    (property \"Digi-Key_PN\" \"%1\" (at %2 0)").arg(newDigikey).arg(lastLoc);
 					newlines.push_back(newTxt);
 					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
 					newlines.push_back("    )");
-					newid++;
 				}
 				if (addLcsc)
 				{
 					emit SendMessage(QString("Adding '%1' LCSC '%2'").arg(lastRef).arg(newLcsc), spdlog::level::level_enum::debug, QString());
-					QString newTxt = QString("    (property \"LCSC\" \"%1\" (id %2) (at %3 0)").arg(newLcsc).arg(newid).arg(lastLoc);
+					QString newTxt = QString("    (property \"LCSC\" \"%1\" (at %2 0)").arg(newLcsc).arg(lastLoc);
 					newlines.push_back(newTxt);
 					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
 					newlines.push_back("    )");
-					newid++;
 				}
 				if (addMPN)
 				{
 					emit SendMessage(QString("Adding '%1' MPN '%2'").arg(lastRef).arg(newMPN), spdlog::level::level_enum::debug, QString());
-					QString newTxt = QString("    (property \"MPN\" \"%1\" (id %2) (at %3 0)").arg(newMPN).arg(newid).arg(lastLoc);
+					QString newTxt = QString("    (property \"MPN\" \"%1\" (at %32 0)").arg(newMPN).arg(lastLoc);
 					newlines.push_back(newTxt);
 					newlines.push_back("      (effects (font (size 1.27 1.27)) hide)");
 					newlines.push_back("    )");
-					newid++;
 				}
 			}
 			lastDigikey = "";
@@ -263,7 +259,7 @@ void SchematicAdder::UpdateSchematic(QString const& schPath) const
 			newLcsc = "";
 			lastMPN = "";
 			newMPN = "";
-			lastID = -1;
+			
 			lastLoc = "";
 			lastRef = "";
 			lastValue = "";

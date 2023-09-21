@@ -45,7 +45,7 @@ QString LibraryBase::getGlobalKicadDataPath() const
     return R"(kicad.app/Contents/SharedSupport)";
 #elif defined( Q_OS_WIN )
     //#ifdef _DEBUG
-    return R"(C:/Program Files/KiCad/6.0/share/kicad)";
+    return R"(C:/Program Files/KiCad/7.0/share/kicad)";
     //#else
     //    QFileInfo root( QCoreApplication::applicationDirPath() +  ( "../share/kicad" ) );
     //    return root.absoluteFilePath();

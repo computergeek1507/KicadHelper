@@ -35,7 +35,7 @@ public:
 	virtual void ImportLibrary(QString const& path, QString const& libFolder);
 
 Q_SIGNALS:
-	void SendMessage( QString const& message,  spdlog::level::level_enum llvl, QString const& file) const;
+	void SendMessage( QString message, spdlog::level::level_enum llvl, QString file) const;
 
 	void SendAddLibrary(QString const& level, QString const& name, QString const& type, QString const& descr, QString const& path) const;
 	void SendClearLibrary(QString const& level) const;
